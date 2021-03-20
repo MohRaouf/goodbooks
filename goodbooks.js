@@ -5,8 +5,8 @@ const express = require('express');
 const adminRouter = require('./routes/admin');
 const userRouter = require('./routes/user');
 const authorRouter = require('./routes/author');
-const CategoryRouter=require('./routes/categories')
-const BookRouter=require('./routes/books')
+const categoryRouter=require('./routes/categories')
+const bookRouter=require('./routes/books')
 const PORT = process.env.PORT || 3000
 const app = express()
 
@@ -14,8 +14,8 @@ app.use(json())
 app.use(urlencoded({ extended: true }))
 
 /*  Routes */
-app.use('/categories',CategoryRouter);
-app,use('/books',BookRouter);
+app.use('/categories',categoryRouter);
+app,use('/books',bookRouter);
 app.use("/users",userRouter);
 app.use("/authors",authorRouter);
 app.use("/admin", adminRouter);
