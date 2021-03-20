@@ -19,11 +19,25 @@ userRouter.get("/logout",(request,response)=>{
 
 })
 //to get all books of user and token in header
-userRouter.get("/books",(request,response)=>{
+userRouter.get("/all",(request,response)=>{
 
 })
-//when editing in rating or shelve in user home
+//to get all books of user and token in header
+userRouter.get("/want",(request,response)=>{
+//console.log(request.query)
+})
+//to get all books of user and token in header
+userRouter.get("/current",(request,response)=>{
+
+})
+//to get all books of user and token in header
+userRouter.get("/read",(request,response)=>{
+
+})  
+
+//when editing in rating or shelve in user home //querystring = "/?status=r&rating=3"
 userRouter.patch("/:bookid",(request,response)=>{
-
+//console.log(request.query.status)
 })
+
 module.exports = userRouter;
