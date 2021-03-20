@@ -9,6 +9,14 @@ const app = express()
 app.use(json())
 app.use(urlencoded({ extended: true }))
 
+/*  Routes */
+const CategoryRouter=require('./routes/categories')
+const BookRouter=require('./routes/books')
+
+app.use('/categories',CategoryRouter)
+app,use('/books',BookRouter)
+/*       */
+
 // Application Level Middleware to trap request Info
 app.use("/", (req, res) => {
     console.log(`Application Level Middleware : { Time : ${new Date()} , Method : ${req.method} , URL : ${req.url}}`);
