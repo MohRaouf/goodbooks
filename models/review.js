@@ -4,8 +4,8 @@ const mongoose = require('mongoose')
 //creating reviews Schema 
 const review_schema = new mongoose.Schema({
 
-    bookId : {},
-    userId : {},
+    bookId : {type: mongoose.Schema.Types.ObjectId, ref: 'book'},
+    userId : {type: mongoose.Schema.Types.ObjectId, ref: 'user'},
     review_body : { type : String , required : true },
 })
 

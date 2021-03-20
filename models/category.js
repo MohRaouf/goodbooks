@@ -5,7 +5,7 @@ const mongoose = require('mongoose')
 const category_schema = new mongoose.Schema({
 
     category_name  : { type : String, required : true },
-    category_books : { },
+    category_books : [{type: mongoose.Schema.Types.ObjectId, ref: 'book'}],
 })
 
 //

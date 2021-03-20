@@ -3,12 +3,12 @@ const mongoose = require('mongoose')
 //creating auther schema 
 const auther_schema = new mongoose.Schema({
 
-    auther_fname : { type : String, minimumLength : 3, required : true },
-    auther_lname : { type : String, minimumLength : 3, required : true },
-    auther_photo : { data : Buffer,  contentType : String },
-    auther_dob   : { type : Date, required : true },
-    auther_gender: { type : String , enum : ["Male","Female"], required : true },
-    auther_books : [{  }]
+    fname : { type : String, minimumLength : 3, required : true },
+    lname : { type : String, minimumLength : 3, required : true },
+    photo : { data : Buffer,  contentType : String },
+    dob   : { type : Date, required : true },
+    gender: { type : String , enum : ["M", "F"]},
+    books : [{type: mongoose.Schema.Types.ObjectId, ref: 'book'}]
 })
 
 //creating Auther model
