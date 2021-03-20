@@ -10,7 +10,7 @@ CategoryRouter.get('/',async (req,res,next)=>{
 /* get specific category */
 CategoryRouter.get('/:categoryid',async (req,res,next)=>{
     const Id=req.params.categoryid;
-    const category=await CategoryRouter.findbyId(Id).populate('books').populate('authors');
+    const category=await CategoryRouter.findbyId(Id).populate('books','name').populate('authors','fname');
     res.json(category)
 })
 /* get popular categories */
