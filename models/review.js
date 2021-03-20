@@ -2,14 +2,14 @@
 const mongoose = require('mongoose')
 
 //creating reviews Schema 
-const review_schema = new mongoose.Schema({
+const reviewSchema = new mongoose.Schema({
 
-    bookId : {},
-    userId : {},
-    review_body : { type : String , required : true },
+    bookId : { type: mongoose.Schema.Types.ObjectId, ref: 'book' },
+    userId : { type: mongoose.Schema.Types.ObjectId, ref: 'user' },
+    body   : { type : String , required : true },
 })
 
 //creating review model 
-const ReviewModel = mongoose.model('review', review_schema)
+const ReviewModel = mongoose.model('review', reviewSchema)
 //exports review model
 module.exports = ReviewModel
