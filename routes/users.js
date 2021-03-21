@@ -114,12 +114,6 @@ userRouter.get("/", authenticateToken, async(req, res) => {
     return res.json(userInfo)
 })
 
-//to get all books of user and token in header
-userRouter.get("/books", authenticateToken, async(req, res) => {
-    const username = req.user;
-
-
-})
 
 //when editing in rating or shelve in user home
 userRouter.patch("/:bookid", authenticateToken, async(req, res) => {
