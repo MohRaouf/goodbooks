@@ -2,7 +2,7 @@ require('dotenv').config()
 require("./boot/dbConnecion");
 const { json, urlencoded } = require('express');
 const express = require('express');
-const adminRouter = require('./routes/admin');
+const adminRouter = require('./routes/admins');
 
 const PORT = process.env.PORT || 3000
 const app = express()

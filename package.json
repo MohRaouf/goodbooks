@@ -2,7 +2,7 @@
     "name": "goodbooks",
     "version": "1.0.0",
     "description": "this Website contains different books from different categories, you can view the book views and ratings, rate and review books, arrange your own book shelve",
-    "main": "index.js",
+    "main": "goodbooks.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
