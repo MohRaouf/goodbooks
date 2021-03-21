@@ -2,7 +2,7 @@ require('dotenv').config()
 require("./boot/dbConnecion");
 const { json, urlencoded } = require('express');
 const express = require('express');
-const adminRouter = require('./routes/admin');
+const adminRouter = require('./routes/admins');
 const userRouter = require('./routes/user');
 const authorRouter = require('./routes/author');
 const categoryRouter=require('./routes/categories')
@@ -15,7 +15,7 @@ app.use(urlencoded({ extended: true }))
 
 /*  Routes */
 app.use('/categories',categoryRouter);
-app,use('/books',bookRouter);
+app.use('/books',bookRouter);
 app.use("/users",userRouter);
 app.use("/authors",authorRouter);
 app.use("/admin", adminRouter);
