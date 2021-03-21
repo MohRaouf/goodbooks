@@ -101,18 +101,30 @@ userRouter.get("/logout", async(req, res) => {
 
 })
 
-/* User Info */
+/* User Book Shelf Info Info */
 userRouter.get("/", authenticateToken, async(req, res) => {
+    const username = req.user;
+    const userInfo = await UserModel.findOne({ username: username }).catch((err) => {
+        console.error(err);
+        return res.sendStatus(503)
+    })
 
+    // Check of  Query String for Page Numer and Book Status then Apply Filters on the USER bookshelf
+    /////////////////////////////////////////////////////////////////////////////////////////////////
+    return res.json(userInfo)
 })
 
 //to get all books of user and token in header
 userRouter.get("/books", authenticateToken, async(req, res) => {
+    const username = req.user;
+
 
 })
 
 //when editing in rating or shelve in user home
 userRouter.patch("/:bookid", authenticateToken, async(req, res) => {
+    const username = req.user;
+
 
 })
 
