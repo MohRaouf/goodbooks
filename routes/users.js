@@ -1,7 +1,8 @@
 const express = require('express');
-const userRouter = express.Router();
+const jwt = require('jsonwebtoken');
 const UserModel = require('../models/user')
-const authenticateToken = require('../helpers/methods')
+const jwtHelpers = require('../helpers/jwt_helper')
+const userRouter = express.Router();
 
 /* Sign up New User */
 userRouter.post("/signup", async(req, res) => {
@@ -10,20 +11,22 @@ userRouter.post("/signup", async(req, res) => {
         username: req.body.username,
         fname: req.body.fname,
         lname: req.body.lname,
+        password: req.body.password,
         dob: req.body.dob,
         email: req.body.email,
         gender: req.body.gender,
         ...(req.body.photo ? { photo: req.body.photo } : {})
     })
+    console.log(userInstance)
     await userInstance.save().then((user) => {
         console.log(`New User Added : ${user}`)
-        res.sendStatus(201);
+        return res.sendStatus(201);
     }).catch((err) => {
         console.error("====Error===>", err)
-        if (err.code == 11000) {
-            return res.status(409).send("Duplicated Username") // username duplication - conflict
+        if (err.code == 11000) { /* username duplication - conflict */
+            return res.status(409).send("Duplicated Username")
         }
-        res.sendStatus(500)
+        return res.sendStatus(500)
     })
 })
 
@@ -41,20 +44,17 @@ userRouter.post("/login", async(req, res) => {
 
     //Username Found
     if (userInstance) {
-        if (await bcrypt.compare(reqPassword, userInstance.password)) {
-            console.log(`User ${reqUsername} Logged In Successfully`)
+
+        if (userInstance.isValidPassword(reqPassword)) {
 
             const username = { username: reqUsername }
-            const accessToken = generateAcessToken(username)
-            const refreshToken = jwt.sign(username, process.env.REFRESH_TOKEN_SECRET)
+            const accessToken = jwtHelpers.generateAcessToken(username)
+            const refreshToken = jwtHelpers.generateRefreshToken(username)
 
-            UserModel.updateOne({ username: reqUsername }, { refreshToken: refreshToken }, { new: true })
-                .catch((err) => {
-                    console.error("====Error===>", err)
-                    return res.sendStatus(500)
-                })
-
-            return res.json({ accessToken: accessToken, refreshToken: refreshToken })
+            if (userInstance.setRefreshToken(refreshToken)) {
+                console.log(`${reqUsername} Logged in Successfully !`)
+                return res.json({ accessToken: accessToken, refreshToken: refreshToken })
+            } else return res.sendStatus(500)
 
         } else {
             console.log('Invalid Username Or Password')
@@ -66,14 +66,19 @@ userRouter.post("/login", async(req, res) => {
     }
 })
 
-/* Logout --> Delete User Refresh Token From DB */
-userRouter.get("/logout", async(req, res) => {
+/* Update Access Token */
+userRouter.get("/login", async(req, res) => {
 
-    const refreshToken = req.body.refToken;
+    const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
+    console.log(`${refreshToken}`)
 
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, user) => {
-        if (err) return res.sendStatus(403)
+
+        if (err) {
+            console.error(err)
+            return res.sendStatus(403)
+        }
         const username = user.username;
         console.log(`Extracted Username from RefreshToken ==> ${username}`)
 
@@ -84,39 +89,64 @@ userRouter.get("/logout", async(req, res) => {
             })
 
         if (!userInstance) {
-            console.error(`Admin Doesn't Exist`)
-            return res.status(404).send(`Admin Doesn't Exist`)
+            console.error('User not found')
+            return res.status(404).send(`User Doesn't Exist`)
         }
-
         if (userInstance.refreshToken != null && userInstance.refreshToken === refreshToken) {
-            console.log(`${userInstance.refreshToken}`)
-            const newAccessToken = generateAcessToken({ username: user.username })
+            const newAccessToken = jwtHelpers.generateAcessToken({ username: username })
             console.log('Access Token Updated')
             return res.json({ accessToken: newAccessToken })
         }
 
-        console.error('User Refresh Token Is not found') //null
-        return res.status(401).send(`${username} Logged Out`)
+        console.error('User Refresh Token Is not Set')
+        return res.status(401).send(`${username} Refresh Token Is not Set`)
+    })
+})
+
+/* Logout --> Delete User Refresh Token From DB */
+userRouter.post("/logout", async(req, res) => {
+
+    const refreshToken = req.body.refreshToken;
+    if (refreshToken == null) return res.sendStatus(401);
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, user) => {
+
+        if (err) return res.sendStatus(403)
+        const username = user.username;
+        console.log(`Extracted Username from RefreshToken ==> ${username}`)
+
+        const userInstance = await UserModel.updateOne({ username: username }, { refreshToken: null }, { new: true })
+            .catch((err) => {
+                console.error(err);
+                return res.sendStatus(503)
+            })
+        if (!userInstance) {
+            console.error('User not found')
+            return res.sendStatus(401)
+        }
+        console.log(`${userInstance}`)
+        console.log(`${username} Logged out - Refresh Token Reset`)
+        return res.sendStatus(200)
     })
 
 })
 
 /* User Book Shelf Info Info */
-userRouter.get("/", authenticateToken, async(req, res) => {
-    const username = req.user;
-    const userInfo = await UserModel.findOne({ username: username }).catch((err) => {
-        console.error(err);
-        return res.sendStatus(503)
-    })
+userRouter.get("/", jwtHelpers.verifyAccessToken, async(req, res) => {
+    // const username = req.user;
+    // const userInfo = await UserModel.findOne({ username: username }).catch((err) => {
+    //     console.error(err);
+    //     return res.sendStatus(503)
+    // })
 
-    // Check of  Query String for Page Numer and Book Status then Apply Filters on the USER bookshelf
-    /////////////////////////////////////////////////////////////////////////////////////////////////
-    return res.json(userInfo)
+    // // Check of  Query String for Page Numer and Book Status then Apply Filters on the USER bookshelf
+    // /////////////////////////////////////////////////////////////////////////////////////////////////
+    // return res.json(userInfo)
+    res.send('OK')
 })
 
 
 //when editing in rating or shelve in user home
-userRouter.patch("/:bookid", authenticateToken, async(req, res) => {
+userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async(req, res) => {
     const username = req.user;
 
 
