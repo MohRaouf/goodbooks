@@ -12,15 +12,15 @@ AdminSchema.pre('save', function(next) {
     if (this.isNew) { //check if new doc
         bcrypt.hash(this.password, 10, (err, hashedText) => {
             doc.password = hashedText;
-            next() //call next to execute the operation on the DB
         })
     }
+    next()
 })
 
 AdminSchema.methods.isValidPassword = async function(password) {
     try {
-        await bcrypt.compare(password, this.password)
-        return true
+        const result = await bcrypt.compare(password, this.password)
+        return result
     } catch (err) {
         console.error(err)
         return false
@@ -28,13 +28,13 @@ AdminSchema.methods.isValidPassword = async function(password) {
 }
 
 AdminSchema.methods.setRefreshToken = async function(newRefreshToken) {
-    try {
-        this.refreshToken = newRefreshToken
-        return true;
-    } catch (err) {
-        console.error(err)
-        return false;
-    }
+    const adminInstance = this;
+    adminInstance.refreshToken = newRefreshToken
+    await adminInstance.save().then(() => { return true; })
+        .catch(err => {
+            console.error(err)
+            return false;
+        })
 }
 
 const AdminModel = mongoose.model("admin", AdminSchema);

@@ -42,7 +42,7 @@ adminRouter.post("/login", async(req, res) => {
 
     //Username Found
     if (adminInstance) {
-        if (adminInstance.isValidPassword(reqPassword)) {
+        if (await adminInstance.isValidPassword(reqPassword)) {
 
             const username = { username: reqUsername }
             const accessToken = jwtHelpers.generateAcessToken(username)
@@ -84,7 +84,7 @@ adminRouter.get("/login", async(req, res) => {
             console.error('Admin Refresh Token Is not found')
             return res.status(404).send(`Admin Doesn't Exist`)
         }
-
+        console.log(`Admin Refresh Token : ${adminInstance.refreshToken}`)
         if (adminInstance.refreshToken != null && adminInstance.refreshToken === refreshToken) {
             console.log(`${adminInstance.refreshToken}`)
             const newAccessToken = jwtHelpers.generateAcessToken({ username: user.username })
@@ -121,7 +121,5 @@ adminRouter.post('/logout', async(req, res) => {
         return res.sendStatus(200)
     })
 })
-
-
 
 module.exports = adminRouter;

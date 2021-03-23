@@ -21,7 +21,7 @@ function verifyAccessToken(req, res, next) {
 }
 
 function generateAcessToken(username) {
-    console.log(`username in Generation Method : ${username}`)
+    console.log(`username in Generation Method : ${username.username}`)
     return (jwt.sign(username, process.env.ACCESS_TOKEN_SECERET, { expiresIn: '50s' })) //50 mins
 }
 

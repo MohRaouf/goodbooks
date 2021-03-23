@@ -1,8 +1,6 @@
-// Requiring Mongoose for communicate with mongodb data
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt');
 
-//creating user Schema 
 const UserSchema = new mongoose.Schema({
 
     fname: { type: String, minimumLength: 3, required: true },
@@ -29,16 +27,15 @@ UserSchema.pre('save', function(next) {
         bcrypt.hash(this.password, 10, (err, hashedText) => {
             console.log(`hashed Password : ${hashedText}`)
             doc.password = hashedText;
-            next() //call next to execute the operation on the DB
         })
     }
+    next()
 })
-
 
 UserSchema.methods.isValidPassword = async function(password) {
     try {
-        await bcrypt.compare(password, this.password)
-        return true
+        const result = await bcrypt.compare(password, this.password)
+        return result
     } catch (err) {
         console.error(err)
         return false
@@ -46,17 +43,14 @@ UserSchema.methods.isValidPassword = async function(password) {
 }
 
 UserSchema.methods.setRefreshToken = async function(newRefreshToken) {
-    try {
-        this.refreshToken = newRefreshToken
-        return true;
-    } catch (err) {
-        console.error(err)
-        return false;
-    }
+    const adminInstance = this;
+    adminInstance.refreshToken = newRefreshToken
+    await adminInstance.save().then(() => { return true; })
+        .catch(err => {
+            console.error(err)
+            return false;
+        })
 }
 
-
-//making a module to export it and using in validation in a middleware
 const UserModel = mongoose.model('user', UserSchema)
-    //exporting user model to use it in routsh
 module.exports = UserModel
