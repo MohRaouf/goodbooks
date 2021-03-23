@@ -1,11 +1,10 @@
 const mongoose = require('mongoose')
 const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/goodbooks'
 mongoose.connect(MONGODB_URL, {
-    useNewUrlParser:true,
-    useUnifiedTopology:true,
-    useCreateIndex:true
-},(err) => {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true
+}, (err) => {
     if (err) console.error(err)
     else console.log("Connected To DB")
 })
-
