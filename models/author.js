@@ -1,7 +1,7 @@
 // Requiring Mongoose for communicate with mongodb data
 const mongoose = require('mongoose')
 //creating auther schema 
-const auther_schema = new mongoose.Schema({
+const AuthorSchema = new mongoose.Schema({
 
     fname : { type : String, minimumLength : 3, required : true },
     lname : { type : String, minimumLength : 3, required : true },
@@ -12,6 +12,6 @@ const auther_schema = new mongoose.Schema({
 })
 
 //creating Auther model
-const AutherModel = mongoose.model('auther', auther_schema)
+const AuthorModel = mongoose.model('auther', AuthorSchema)
 //exports Auther model 
-module.exports = AutherModel
+module.exports = AuthorModel
