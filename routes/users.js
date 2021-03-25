@@ -137,7 +137,7 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, async(req, res) => {
     //     console.error(err);
     //     return res.sendStatus(503)
     // })
-    UserModel.find({ _id: "605b842658f4847d61fbd347"}).populate("bookshelf.bookId").exec((err,result)=>{
+    await UserModel.find({ _id: "605b842658f4847d61fbd347"}).populate("bookshelf.bookId").exec((err,result)=>{
         if(err) console.log(err)
        else 
        
