@@ -131,30 +131,45 @@ userRouter.post("/logout", async(req, res) => {
 })
 
 /* User Book Shelf Info Info */
-userRouter.get("/", jwtHelpers.verifyAccessToken, async(req, res) => {
-    // const username = req.user;
-    // const userInfo = await UserModel.findOne({ username: username }).catch((err) => {
-    //     console.error(err);
-    //     return res.sendStatus(503)
+//first get user by id then make projection on bookshelf array to filter by status then slice [skip,limit ]for pagination
+userRouter.get("/", /*authenticateToken,*/ (req, res) => {
+  var Status=req.query.status?[req.query.status]:["r","c","w"]
+  var Page =req.query.pg?req.query.pg:0
+   const user=UserModel.aggregate(
+      [{ $match : { _id: mongoose.Types.ObjectId("605b842658f4847d61fbd347")} }, {$project: {
+          bookshelf: [{$filter: {
+              input: '$bookshelf',
+              as: 'book',
+              cond:{ $in: [ "$$book.status", Status ] } ,
+          }}],_id:0
+      }}], function(err, result) {
+      if (err) {
+        res.send(err);
+      } else {
+        res.send(result[0].bookshelf[0].slice(Page*3,Page*3+3));
+      }
+    })
+      console.log(user)
+   //res.send(user)
+      /*    UserModel.find({ _id: "605b842658f4847d61fbd347"}, ((err, doc)=>{
+              if(err) console.log(err)
+              console.log(doc)
+              res.send(doc)
+          }))*/
+  /*        .exec((err,result)=>{
+          if(err) console.log(err)
+         else 
+         res.send(result)*/
+        /* var bookshelf = result[0].bookshelf.filter(function(book) {
+         var Status =(req.query.status)?req.query.status:book.status
+              return book.status == Status
+            });
+            res.send(bookshelf.slice(req.query.pg*10,req.query.pg*10+9))*/
     // })
-    await UserModel.find({ _id: "605b842658f4847d61fbd347"}).populate("bookshelf.bookId").exec((err,result)=>{
-        if(err) console.log(err)
-       else 
-       
-       var bookshelf = result[0].bookshelf.filter(function(book) {
-       var Status =(req.query.status)?req.query.status:book.status
-            return book.status == Status
-          });
-          res.send(bookshelf.slice(req.query.pg*10,req.query.pg*10+9))
-   })
-        
-        }
-    // // Check of  Query String for Page Numer and Book Status then Apply Filters on the USER bookshelf
-    // /////////////////////////////////////////////////////////////////////////////////////////////////
-    // return res.json(userInfo)
-
-)
-
+          
+         }
+        );
+  
 
 //when editing in rating or shelve in user home
 userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async(req, res) => {
