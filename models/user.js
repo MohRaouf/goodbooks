@@ -13,7 +13,7 @@ const UserSchema = new mongoose.Schema({
     dob: { type: Date, required: true },
     bookshelf: [{
         bookId: { type: mongoose.Schema.Types.ObjectId, ref: 'book' },
-        rate: { type: Number, min: 1, max: 5 }, //how?? : when user rate a book by default add the book as read and the rate to bookshelf 
+        rate: { type: Number, min: 1, max: 5 ,default:0}, //how?? : when user rate a book by default add the book as read and the rate to bookshelf 
         status: { type: String, enum: ["r", "c", "w"] },
         //readshelf: { }
     }],

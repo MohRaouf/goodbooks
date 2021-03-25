@@ -11,6 +11,14 @@ const bookSchema = new mongoose.Schema({
     avgRating: { type: Number }, //calculated
     ratingCount: { type: Number }, //calculated
 })
-
+bookSchema.post('save', function(doc) {
+    AuthorModel.findByIdAndUpdate(doc.authorId,{$push:{books:doc}},(err,user)=>{
+        console.log("Yesss")
+    })
+        CategoryModel.updateMany({_id: { "$in": doc.categoryId }},{$push:{books:doc}},(err,user)=>{
+            console.log("Yesss")
+        })
+      
+    });
 const BookModel = mongoose.model('book', bookSchema)
 module.exports = BookModel

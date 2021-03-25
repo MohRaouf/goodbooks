@@ -137,12 +137,23 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, async(req, res) => {
     //     console.error(err);
     //     return res.sendStatus(503)
     // })
-
+    UserModel.find({ _id: "605b842658f4847d61fbd347"}).populate("bookshelf.bookId").exec((err,result)=>{
+        if(err) console.log(err)
+       else 
+       
+       var bookshelf = result[0].bookshelf.filter(function(book) {
+       var Status =(req.query.status)?req.query.status:book.status
+            return book.status == Status
+          });
+          res.send(bookshelf.slice(req.query.pg*10,req.query.pg*10+9))
+   })
+        
+        }
     // // Check of  Query String for Page Numer and Book Status then Apply Filters on the USER bookshelf
     // /////////////////////////////////////////////////////////////////////////////////////////////////
     // return res.json(userInfo)
-    res.send('OK')
-})
+
+)
 
 
 //when editing in rating or shelve in user home
