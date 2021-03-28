@@ -13,8 +13,15 @@ const bookSchema = new mongoose.Schema({
     ratingCount: {}, //calculated
 })
 
+//staticc function to get popular books 
+// bookSchema.statics.getTopBooks=function (rate,cb){
+//   return  this.find({ avgRating: { $gt: rate } });
+// }
+bookSchema.statics.getTopBooks=function (rate){
+    return  this.find({ avgRating: { $gt: rate } , reviews : {$gt : 20 }});
+  }
 //creating book model to use it in validation with a middleware
 const BookModel = mongoose.model('book', bookSchema)
 
 //exporting the book model 
-module.export = BookModel
+module.exports= BookModel

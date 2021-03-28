@@ -11,6 +11,13 @@ const authorSchema = new mongoose.Schema({
     books : [{type: mongoose.Schema.Types.ObjectId, ref: 'book'}],
 })
 
+//ststic function to get popular authors
+// authorSchema.statics.getTopAuthors=function(size,cb){
+//    return this.find({ books: { $size: { $gt: size } } });
+// }
+authorSchema.statics.getTopAuthors=function(size){
+    return this.find({ books: { $size: { $gt: size } } });
+ } 
 //creating author model
 const AuthorModel = mongoose.model('author', authorSchema)
 //exports author model 

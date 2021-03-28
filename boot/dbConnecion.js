@@ -1,5 +1,6 @@
 const mongoose = require('mongoose')
-const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/goodbooks'
+// const MONGODB_URL = process.env.MONGODB_URL || 'mongodb://localhost:27017/goodbooks'
+const MONGODB_URL = process.env.MONGODB_URL || "mongodb+srv://team7-ninjas:123intake41@goodbookscluster.mrby6.mongodb.net/awesome-reads?retryWrites=true&w=majority"
 mongoose.connect(MONGODB_URL, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
