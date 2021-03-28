@@ -1,5 +1,5 @@
 const mongoose = require('mongoose')
-const authorSchema = new mongoose.Schema({
+const AuthorSchema = new mongoose.Schema({
 
     fname: { type: String, minimumLength: 2, required: true },
     lname: { type: String, minimumLength: 2 },
@@ -9,5 +9,5 @@ const authorSchema = new mongoose.Schema({
     books: [{ type: mongoose.Schema.Types.ObjectId, ref: 'book' }],
 })
 
-const AuthorModel = mongoose.model('author', authorSchema)
+const AuthorModel = mongoose.model('author', AuthorSchema)
 module.exports = AuthorModel
