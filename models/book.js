@@ -22,5 +22,5 @@ BookSchema.post('save', async function(doc) {
     })
       
     });
-const BookModel = mongoose.model('book', bookSchema)
+const BookModel = mongoose.model('book', BookSchema)
 module.exports = BookModel
