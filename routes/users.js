@@ -118,7 +118,22 @@ userRouter.get("/", authenticateToken, async(req, res) => {
 //when editing in rating or shelve in user home
 userRouter.patch("/:bookid", authenticateToken, async(req, res) => {
     const username = req.user;
-
+    const username = req.body.username;
+    const bookId = req.params.bookId;
+    const bookshelf = req.body.bookshelf;
+    const rate = req.body.rate;
+    const status = req.body.status;
+    try{
+        
+        await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},{
+          ...(bookshelf.rate ? { "bookshelf.$.rate": bookshelf.rate }: {}),
+          ...(bookshelf.status ? { "bookshelf.$.status": bookshelf.status }: {})
+        }).then((data)=>{
+            console.log(data)
+        })
+    }catch(e){
+        console.log(e.message)
+    }
 
 })
 
