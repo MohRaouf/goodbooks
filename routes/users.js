@@ -44,8 +44,7 @@ userRouter.post("/login", async(req, res) => {
 
     //Username Found
     if (userInstance) {
-
-        if (userInstance.isValidPassword(reqPassword)) {
+        if (await userInstance.isValidPassword(reqPassword)) {
 
             const username = { username: reqUsername }
             const accessToken = jwtHelpers.generateAcessToken(username)

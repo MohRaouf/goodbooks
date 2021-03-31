@@ -1,16 +1,46 @@
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const bookSchema = new mongoose.Schema({
-    //_id Auto increment [not finshed = > seaarch ]
+const BookSchema = new mongoose.Schema({
     name: { type: String, required: true, index: true },
     photo: { data: Buffer, contentType: String },
     description: { type: String, required: true },
     reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'review' }],
     authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'author', require: true },
-    categoryId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'category', require: true }],
-    avgRating: { type: Number }, //calculated
-    ratingCount: { type: Number }, //calculated
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'category', require: true },
+    avgRating: { type: Number, default: 0 }, //calculated
+    ratingCount: { type: Number, default: 0 }, //calculated
 })
 
-const BookModel = mongoose.model('book', bookSchema)
+BookSchema.post('save', async function(doc) {
+    console.log('In Book Save Middleware')
+
+    await this.model('author').findByIdAndUpdate(doc.authorId, { $push: { books: doc } }).catch((err) => {
+        console.error(err)
+        return res.sendStatus(503)
+    })
+    await this.model('category').findByIdAndUpdate(doc.categoryId, { $push: { books: doc } }).catch((err) => {
+        console.error(err)
+        return res.sendStatus(503)
+    })
+});
+
+// BookSchema.statics.resetAuthor = async function(authorId) {
+//     await BookModel.findByIdAndUpdate(authorID, { authorId: UNKNOWN_AUTHOR_ID }).then(() => {
+//         return true;
+//     }).catch((err) => {
+//         console.log(`Error in updating to unknown Author : ${err}`)
+//         return false;
+//     })
+// }
+
+// BookSchema.statics.resetCategory = async function(categoryId) {
+//     await BookModel.findByIdAndUpdate(categoryId, { categoryId: UNKOWN_CATEGORY_ID }).then(() => {
+//         return true;
+//     }).catch((err) => {
+//         console.log(`Error in updating to unknown Author : ${err}`)
+//         return false;
+//     })
+// }
+
+const BookModel = mongoose.model('book', BookSchema)
 module.exports = BookModel
