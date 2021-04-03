@@ -24,23 +24,5 @@ BookSchema.post('save', async function(doc) {
     })
 });
 
-// BookSchema.statics.resetAuthor = async function(authorId) {
-//     await BookModel.findByIdAndUpdate(authorID, { authorId: UNKNOWN_AUTHOR_ID }).then(() => {
-//         return true;
-//     }).catch((err) => {
-//         console.log(`Error in updating to unknown Author : ${err}`)
-//         return false;
-//     })
-// }
-
-// BookSchema.statics.resetCategory = async function(categoryId) {
-//     await BookModel.findByIdAndUpdate(categoryId, { categoryId: UNKOWN_CATEGORY_ID }).then(() => {
-//         return true;
-//     }).catch((err) => {
-//         console.log(`Error in updating to unknown Author : ${err}`)
-//         return false;
-//     })
-// }
-
 const BookModel = mongoose.model('book', BookSchema)
 module.exports = BookModel

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
-const UNKNOWN_AUTHOR_ID = "605a7532a7e0791351374d8c"
 
+const UNKNOWN_AUTHOR_ID = "605a7532a7e0791351374d8c"
 const BookModel = require('./book')
 
 const AuthorSchema = new mongoose.Schema({
