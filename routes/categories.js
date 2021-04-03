@@ -14,7 +14,18 @@ categoryRouter.get("/", async(req, res) => {
     return res.json(allCategories);
 })
 
-/* Get Categories by ID no need for Authentication */
+/* get popular categories */
+// >>> without querystring
+categoryRouter.get('/top', async (req, res) => {
+    try{
+    const topCategories=await CategoryModel.getTopCategories(req.query.size);
+    // console.log(topCategories);
+    res.json(topCategories);
+}
+    catch(e){console.log(e.message)
+            }
+
+  /* Get Categories by ID no need for Authentication */
 categoryRouter.get("/:category_id", async(req, res) => {
     const id = req.params.category_id;
     console.log(id)
@@ -30,7 +41,7 @@ categoryRouter.get("/:category_id", async(req, res) => {
     console.log('Not Found')
     return res.status(404).send("Not Found")
 })
-
+    
 /* Insert new Categories need Authentication */
 categoryRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
     const categoryInfo = {
@@ -90,11 +101,5 @@ categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken,jwtHelpers.i
     return res.status(404).send("Book not found")
 
 })
-
-/* Get Popular Categories */
-// categoryRouter.get("/top", async(req, res) => {
-//     const topCategories = await CategortModel.find({ books: { $size: { $gt: 10 } } });
-//     res.json(topCategories);
-// })
-
+  
 module.exports = categoryRouter
