@@ -1,11 +1,16 @@
 const express = require('express')
 const bookRouter = express.Router()
+const jwtHelpers = require('../helpers/jwt_helper')
+const { populate } = require('../models/author')
 const BookModel = require('../models/book')
 const AuthorModel = require('../models/author')
 
-const jwtHelpers = require('../helpers/jwt_helper')
-const { populate } = require('../models/author')
-require('../models/author')
+bookRouter.get('/top', async(req, res) => { 
+    try{
+        const topBooks= await BookModel.getTopBooks(req.query.size);
+        res.json(topBooks);}
+    catch(e){console.log(e.message);}
+})    
 
 /* Get All Books no need for Authentication */
 bookRouter.get("/", async(req, res) => {
@@ -35,7 +40,6 @@ bookRouter.get("/:book_id", async(req, res) => {
     console.log('Not Found')
     return res.status(404).send("Not Found")
 })
-
 /* Insert new Book need Authentication */
 bookRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
     const bookInfo = {
@@ -97,10 +101,5 @@ bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, 
     console.log(`Book Not Found`)
     return res.status(404).send("Book not found")
 })
-
-// /* Get Popular Books */
-// bookRouter.get("/top", async(req, res) => {
-//     const topbooks = await BookModel.find({ avgRating: { $gt: 4 } })
-// })
 
 module.exports = bookRouter

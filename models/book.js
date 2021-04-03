@@ -11,6 +11,10 @@ const BookSchema = new mongoose.Schema({
     ratingCount: { type: Number, default: 0 }, //calculated
 })
 
+BookSchema.statics.getTopBooks=function (rate){
+    return this.find({"$expr": {"$gte": [{$size: "$reviews"}, 20]}},{ "avgRating" : {$gt :parseInt(rate)}},);
+  }
+
 BookSchema.post('save', async function(doc) {
     console.log('In Book Save Middleware')
 

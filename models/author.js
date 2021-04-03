@@ -22,5 +22,10 @@ AuthorSchema.pre('deleteOne', { document: false, query: true }, async function(n
         .catch((err) => next(err)).then(next())
 });
 
+//static function to get popular authors
+AuthorSchema.statics.getTopAuthors=function(num){
+    return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+ }
+//exports author model 
 const AuthorModel = mongoose.model('author', AuthorSchema)
 module.exports = AuthorModel

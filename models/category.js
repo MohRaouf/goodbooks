@@ -8,6 +8,12 @@ const CategorySchema = new mongoose.Schema({
     books: [{ type: mongoose.Schema.Types.ObjectId, ref: 'book' }],
 })
 
+//static function to get popular categories
+CategorySchema.statics.getTopCategories=function (num){
+return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+}
+
+
 CategorySchema.pre('remove', async() => {
     // Remove all the docs that refers
     await this.model('book').updateOne({ categoryId: this._id }, { categoryId: UNKOWN_CATEGORY_ID })

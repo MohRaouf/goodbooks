@@ -1,7 +1,7 @@
 const express = require('express');
-const authorRouter = express.Router();
 const AuthorModel = require('../models/author')
 const jwtHelpers = require('../helpers/jwt_helper')
+const authorRouter = express.Router();
 
 /* Get All Authors no need for Authentication */
 authorRouter.get("/", async(req, res) => {
@@ -14,6 +14,14 @@ authorRouter.get("/", async(req, res) => {
     return res.json(allAuthors);
 
 
+})
+//when request to get popular author
+// >>> with query
+authorRouter.get("/top",async (request,response)=>{
+    try{
+        const topAuthors=await AuthorModel.getTopAuthors(request.query.size);
+        response.json(topAuthors);}
+    catch(e){console.log(e.message);}
 })
 
 /* Get Author by ID no need for Authentication */
@@ -98,8 +106,4 @@ authorRouter.delete("/:author_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdm
     return res.status(404).send("Book not found")
 })
 
-/* Get Popular Authors */
-authorRouter.get("/top", async(req, res) => {
-
-})
 module.exports = authorRouter;
