@@ -37,7 +37,7 @@ bookRouter.get("/:book_id", async(req, res) => {
 })
 
 /* Insert new Book need Authentication */
-bookRouter.post("/", jwtHelpers.verifyAccessToken, async(req, res) => {
+bookRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
     const bookInfo = {
         name: req.body.name,
         ...(req.body.photo ? { photo: req.body.photo } : {}), //optional
@@ -55,7 +55,7 @@ bookRouter.post("/", jwtHelpers.verifyAccessToken, async(req, res) => {
 })
 
 /* Update Book with ID need Authentication */
-bookRouter.patch("/:book_id", jwtHelpers.verifyAccessToken, async(req, res) => {
+bookRouter.patch("/:book_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
 
     const id = req.params.book_id;
     console.log(`Updating Book ID : ${id}`)
@@ -83,7 +83,7 @@ bookRouter.patch("/:book_id", jwtHelpers.verifyAccessToken, async(req, res) => {
 
 
 /* Delete Book with ID need Authentication */
-bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken, async(req, res) => {
+bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
     const id = req.params.book_id;
     const docToDelete = await BookModel.findByIdAndDelete(id)
         .catch((err) => {

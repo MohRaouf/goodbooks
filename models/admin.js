@@ -7,17 +7,18 @@ const AdminSchema = new mongoose.Schema({
     refreshToken: { type: "string", default: null },
 })
 
-AdminSchema.pre('save', function(next) {
+AdminSchema.pre('save', function (next) {
     const doc = this;
     if (this.isNew) { //check if new doc
         bcrypt.hash(this.password, 10, (err, hashedText) => {
+            if (err) console.error(err)
             doc.password = hashedText;
+            next()
         })
     }
-    next()
 })
 
-AdminSchema.methods.isValidPassword = async function(password) {
+AdminSchema.methods.isValidPassword = async function (password) {
     try {
         const result = await bcrypt.compare(password, this.password)
         return result
@@ -25,16 +26,6 @@ AdminSchema.methods.isValidPassword = async function(password) {
         console.error(err)
         return false
     }
-}
-
-AdminSchema.methods.setRefreshToken = async function(newRefreshToken) {
-    const adminInstance = this;
-    adminInstance.refreshToken = newRefreshToken
-    await adminInstance.save().then(() => { return true; })
-        .catch(err => {
-            console.error(err)
-            return false;
-        })
 }
 
 const AdminModel = mongoose.model("admin", AdminSchema);

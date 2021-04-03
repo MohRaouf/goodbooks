@@ -34,7 +34,7 @@ authorRouter.get("/:author_id", async(req, res) => {
 })
 
 /* Insert new Author need Authentication */
-authorRouter.post("/", jwtHelpers.verifyAccessToken, async(req, res) => {
+authorRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
     const authorInfo = {
         fname: req.body.fname,
         lname: req.body.lname, //optional
@@ -56,7 +56,7 @@ authorRouter.post("/", jwtHelpers.verifyAccessToken, async(req, res) => {
 })
 
 /* Update Author with ID need Authentication */
-authorRouter.patch("/:author_id", jwtHelpers.verifyAccessToken, async(req, res) => {
+authorRouter.patch("/:author_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
 
     const id = req.params.author_id;
     console.log(`Updating Book ID : ${id}`)
@@ -83,7 +83,7 @@ authorRouter.patch("/:author_id", jwtHelpers.verifyAccessToken, async(req, res) 
 })
 
 /* Delete Author with ID need Authentication */
-authorRouter.delete("/:author_id", jwtHelpers.verifyAccessToken, async(req, res) => {
+authorRouter.delete("/:author_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
     const id = req.params.author_id;
     const docToDelete = await AuthorModel.deleteOne({ _id: id }, { new: true, useFindAndModify: false })
         .catch((err) => {

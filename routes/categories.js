@@ -32,7 +32,7 @@ categoryRouter.get("/:category_id", async(req, res) => {
 })
 
 /* Insert new Categories need Authentication */
-categoryRouter.post("/", jwtHelpers.verifyAccessToken, async(req, res) => {
+categoryRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
     const categoryInfo = {
         name: req.body.name
     }
@@ -46,7 +46,7 @@ categoryRouter.post("/", jwtHelpers.verifyAccessToken, async(req, res) => {
 })
 
 /* Update Categories with ID need Authentication */
-categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken, async(req, res) => {
+categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
 
     const id = req.params.category_id;
     console.log(`Updating Category ID : ${id}`)
@@ -74,7 +74,7 @@ categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken, async(req, r
 })
 
 /* Delete Categories with ID need Authentication */
-categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken, async(req, res) => {
+categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
 
     const id = req.params.category_id;
     const docToDelete = await CategoryModel.deleteOne({ _id: id }, { new: true, useFindAndModify: false })
@@ -92,9 +92,9 @@ categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken, async(req, 
 })
 
 /* Get Popular Categories */
-categoryRouter.get("/top", async(req, res) => {
-    const topCategories = await CategortModel.find({ books: { $size: { $gt: 10 } } });
-    res.json(topCategories);
-})
+// categoryRouter.get("/top", async(req, res) => {
+//     const topCategories = await CategortModel.find({ books: { $size: { $gt: 10 } } });
+//     res.json(topCategories);
+// })
 
 module.exports = categoryRouter

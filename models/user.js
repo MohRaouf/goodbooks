@@ -25,11 +25,11 @@ UserSchema.pre('save', function(next) {
     const doc = this;
     if (this.isNew) { //check if new doc
         bcrypt.hash(this.password, 10, (err, hashedText) => {
-            console.log(`hashed Password : ${hashedText}`)
+            if(err) console.error(err)
             doc.password = hashedText;
+            next()
         })
     }
-    next()
 })
 
 UserSchema.methods.isValidPassword = async function(password) {
@@ -40,16 +40,6 @@ UserSchema.methods.isValidPassword = async function(password) {
         console.error(err)
         return false
     }
-}
-
-UserSchema.methods.setRefreshToken = async function(newRefreshToken) {
-    const adminInstance = this;
-    adminInstance.refreshToken = newRefreshToken
-    await adminInstance.save().then(() => { return true; })
-        .catch(err => {
-            console.error(err)
-            return false;
-        })
 }
 
 const UserModel = mongoose.model('user', UserSchema)
