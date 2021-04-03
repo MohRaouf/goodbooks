@@ -3,6 +3,8 @@ const jwt = require('jsonwebtoken');
 const UserModel = require('../models/user')
 const jwtHelpers = require('../helpers/jwt_helper')
 const userRouter = express.Router();
+const mongoose = require('mongoose');
+
 
 /* Sign up New User */
 userRouter.post("/signup", async (req, res) => {
@@ -92,7 +94,7 @@ userRouter.get("/login", async (req, res) => {
         }
         console.log(`User Refresh Token : ${userInstance.refreshToken}`)
         if (userInstance.refreshToken != null && userInstance.refreshToken === refreshToken) {
-            const newAccessToken = jwtHelpers.generateAcessToken({ userId: userId})
+            const newAccessToken = jwtHelpers.generateAcessToken({ userId: userId })
             console.log('Access Token Updated')
             return res.json({ accessToken: newAccessToken })
         }
@@ -131,26 +133,30 @@ userRouter.post("/logout", async (req, res) => {
 
 /* User Book Shelf Info Info */
 //first get user by id then make projection on bookshelf array to filter by status then slice [skip,limit ]for pagination
-userRouter.get("/", /*authenticateToken,*/ (req, res) => {
-  var Status=req.query.status?[req.query.status]:["r","c","w"]
-  var Page =req.query.pg?req.query.pg:0
-   const user=UserModel.aggregate(
-      [{ $match : { _id: mongoose.Types.ObjectId("605b842658f4847d61fbd347")} }, {$project: {
-          bookshelf: [{$filter: {
-              input: '$bookshelf',
-              as: 'book',
-              cond:{ $in: [ "$$book.status", Status ] } ,
-          }}],_id:0
-      }}], function(err, result) {
-      if (err) {
-        res.send(err);
-      } else {
-        res.send(result[0].bookshelf[0].slice(Page*3,Page*3+3));
-      }
-      })
-      console.log(user)          
-      });
-  
+userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
+    var Status = req.query.status ? [req.query.status] : ["r", "c", "w"]
+    var Page = req.query.pg ? req.query.pg : 0
+    const user = UserModel.aggregate(
+        [{ $match: { _id: mongoose.Types.ObjectId(req.userId) } }, {
+            $project: {
+                bookshelf: [{
+                    $filter: {
+                        input: '$bookshelf',
+                        as: 'book',
+                        cond: { $in: ["$$book.status", Status] },
+                    }
+                }], _id: 0
+            }
+        }], function (err, result) {
+            if (err) {
+                res.send(err);
+            } else {
+                res.send(result[0].bookshelf[0].slice(Page * 3, Page * 3 + 3));
+            }
+        })
+    console.log(user)
+});
+
 
 //when editing in rating or shelve in user home
 userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {

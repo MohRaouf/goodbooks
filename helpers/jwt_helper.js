@@ -1,14 +1,11 @@
 const jwt = require('jsonwebtoken');
 const AdminModel = require('../models/admin')
 
-function  isAdmin(req, res, next) {
-    AdminModel.findById(req.userId.userId).then((doc)=>{
-        if(doc){
-            next();
-        }else{
-            return res.sendStatus(401)
-        }
-    }).catch((err)=>{
+function isAdmin(req, res, next) {
+    AdminModel.findById(req.userId).then((doc) => {
+        if (doc) next()
+        else return res.sendStatus(401)
+    }).catch((err) => {
         console.error(err)
         return res.sendStatus(500)
     })
@@ -26,8 +23,8 @@ function verifyAccessToken(req, res, next) {
             return res.sendStatus(403) //HTTP 403 Forbidden client error status
         }
         if (userId) {
-            console.log(userId)
-            req.userId = userId
+            console.log(userId.userId)
+            req.userId = userId.userId
             console.log('Authenticated Successfully')
             next()
         } else {
