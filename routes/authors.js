@@ -5,13 +5,16 @@ const AuthorModel=require('../models/author')
 authorRouter.get("/", (request,response)=>{
 
 })
+//when request to get popular author
+// >>> with query
+authorRouter.get("/top",async (request,response)=>{
+    try{
+        const topAuthors=await AuthorModel.getTopAuthors(request.query.size);
+        response.json(topAuthors);}
+    catch(e){console.log(e.message);}
+})
 //when request to get certain author
 authorRouter.get("/:author_id",(request,response)=>{
 
-})
-//when request to get popular author
-authorRouter.get("/top/:number",async (request,response)=>{
-    const topAuthors=await AuthorModel.getTopAuthors(req.params.number);
-        response.json(topAuthors);
 })
 module.exports = authorRouter;

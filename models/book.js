@@ -13,12 +13,9 @@ const bookSchema = new mongoose.Schema({
     ratingCount: {}, //calculated
 })
 
-//staticc function to get popular books 
-// bookSchema.statics.getTopBooks=function (rate,cb){
-//   return  this.find({ avgRating: { $gt: rate } });
-// }
 bookSchema.statics.getTopBooks=function (rate){
-    return  this.find({ avgRating: { $gt: rate } , reviews : {$gt : 20 }});
+    return this.find({"$expr": {"$gte": [{$size: "$reviews"}, 20]}},{ "avgRating" : {$gt :parseInt(rate)}},);
+
   }
 //creating book model to use it in validation with a middleware
 const BookModel = mongoose.model('book', bookSchema)

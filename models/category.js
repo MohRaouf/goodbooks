@@ -9,13 +9,10 @@ const categorySchema = new mongoose.Schema({
 })
 
 //static function to get popular categories
-// categorySchema.statics.getTopCategories=function (size,cb){
-//    return this.find({ books: { $size: { $gt: size } } });
-// }
-categorySchema.statics.getTopCategories=function (size){
-    return this.find({ books: { $size: { $gt: size } } });
- }
-//
+categorySchema.statics.getTopCategories=function (num){
+return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+}
+
 const CategoryModel = mongoose.model('category',categorySchema)
 //exporting 
 module.exports = CategoryModel
