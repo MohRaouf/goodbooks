@@ -20,7 +20,7 @@ app.use('/categories', categoryRouter);
 app.use('/books', bookRouter);
 app.use("/users", userRouter);
 app.use("/authors", authorRouter);
-app.use("/admin", adminRouter);
+app.use("/admins", adminRouter);
 //////////////
 
 // Application Level Middleware to trap request Info

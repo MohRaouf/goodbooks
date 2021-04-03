@@ -1,21 +1,18 @@
-// Requiring Mongoose for communicate with mongodb data
 const mongoose = require('mongoose')
-//creating author schema 
-const authorSchema = new mongoose.Schema({
+const AuthorSchema = new mongoose.Schema({
 
-    fname : { type : String, minimumLength : 3, required : true },
-    name : { type : String, minimumLength : 3, required : true },
-    photo : { data : Buffer,  contentType : String },
-    dob   : { type : Date, required : true },
-    gender: { type : String , enum : ["Male","Female"], required : true },
-    books : [{type: mongoose.Schema.Types.ObjectId, ref: 'book'}],
+    fname: { type: String, minimumLength: 2, required: true },
+    lname: { type: String, minimumLength: 2 },
+    photo: { data: Buffer, contentType: String },
+    dob: { type: Date },
+    gender: { type: String, enum: ["male", "female"] },
+    books: [{ type: mongoose.Schema.Types.ObjectId, ref: 'book' }],
 })
 
 //static function to get popular authors
-authorSchema.statics.getTopAuthors=function(num){
+AuthorSchema.statics.getTopAuthors=function(num){
     return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
- } 
-//creating author model
-const AuthorModel = mongoose.model('author', authorSchema)
+ }
 //exports author model 
+const AuthorModel = mongoose.model('author', AuthorSchema)
 module.exports = AuthorModel
