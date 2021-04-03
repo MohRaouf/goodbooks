@@ -4,12 +4,12 @@ const jwt = require('jsonwebtoken');
 const AdminModel = require('../models/admin')
 const jwtHelpers = require('../helpers/jwt_helper')
 
-adminRouter.get("/", jwtHelpers.verifyAccessToken, async(req, res) => {
+adminRouter.get("/", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
     res.send("OK")
 })
 
 //Sign up 
-adminRouter.post("/signup", async(req, res) => {
+adminRouter.post("/signup", async (req, res) => {
     const reqUsername = req.body.username;
     const reqPassword = req.body.password;
 
@@ -30,7 +30,7 @@ adminRouter.post("/signup", async(req, res) => {
 })
 
 //Login and send Access Token + Refresh Token
-adminRouter.post("/login", async(req, res) => {
+adminRouter.post("/login", async (req, res) => {
     const reqUsername = req.body.username;
     const reqPassword = req.body.password;
 
@@ -44,14 +44,17 @@ adminRouter.post("/login", async(req, res) => {
     if (adminInstance) {
         if (await adminInstance.isValidPassword(reqPassword)) {
 
-            const username = { username: reqUsername }
-            const accessToken = jwtHelpers.generateAcessToken(username)
-            const refreshToken = jwtHelpers.generateRefreshToken(username)
+            const userId = { userId: adminInstance.id }
+            const accessToken = jwtHelpers.generateAcessToken(userId)
+            const refreshToken = jwtHelpers.generateRefreshToken(userId)
 
-            if (adminInstance.setRefreshToken(refreshToken)) {
-                console.log(`${reqUsername} Logged in Successfully !`)
-                return res.json({ accessToken: accessToken, refreshToken: refreshToken })
-            } else return res.sendStatus(500)
+            AdminModel.updateOne({ _id:adminInstance.id }, { refreshToken: refreshToken }).then((result) => {
+               if(result) return res.json({ accessToken: accessToken, refreshToken: refreshToken })
+                else return res.sendStatus(500)
+            }).catch((err) => {
+                console.log(err)
+                return res.sendStatus(500)
+            })
 
         } else {
             console.log('Invalid Username Or Password')
@@ -64,17 +67,17 @@ adminRouter.post("/login", async(req, res) => {
 })
 
 //Update and Send New Access Token by Refresh Token
-adminRouter.get("/login", async(req, res) => {
+adminRouter.get("/login", async (req, res) => {
 
     const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
 
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, user) => {
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
         if (err) return res.sendStatus(403)
-        const username = user.username;
-        console.log(`Extracted Username from RefreshToken ==> ${username}`)
+        const userId = userInfo.userId;
+        console.log(`Extracted adminId from RefreshToken ==> ${userId}`)
 
-        const adminInstance = await AdminModel.findOne({ username: username })
+        const adminInstance = await AdminModel.findById(userId)
             .catch((err) => {
                 console.error(err);
                 return res.sendStatus(503)
@@ -86,28 +89,27 @@ adminRouter.get("/login", async(req, res) => {
         }
         console.log(`Admin Refresh Token : ${adminInstance.refreshToken}`)
         if (adminInstance.refreshToken != null && adminInstance.refreshToken === refreshToken) {
-            console.log(`${adminInstance.refreshToken}`)
-            const newAccessToken = jwtHelpers.generateAcessToken({ username: user.username })
+            const newAccessToken = jwtHelpers.generateAcessToken({ userId: adminInstance.id })
             console.log('Access Token Updated')
             return res.json({ accessToken: newAccessToken })
         }
 
-        console.error('Admin Refresh Token Is not found')
-        return res.status(401).send(`${username} Refresh Token Is not found`)
+        console.error('Admin Refresh Token Is not set')
+        return res.status(401).send(`Refresh Token Is not set`)
     })
 })
 
-adminRouter.post('/logout', async(req, res) => {
+adminRouter.post('/logout', async (req, res) => {
 
     const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, user) => {
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
 
         if (err) return res.sendStatus(403)
-        const username = user.username;
-        console.log(`Extracted Username from RefreshToken ==> ${username}`)
+        const userId = userInfo.userId;
+        console.log(`Extracted userId from RefreshToken ==> ${userId}`)
 
-        const adminInstance = await AdminModel.updateOne({ username: username }, { refreshToken: null }, { new: true })
+        const adminInstance = await AdminModel.updateOne({ _id: userId }, { refreshToken: null }, { new: true })
             .catch((err) => {
                 console.error(err);
                 return res.sendStatus(503)
@@ -117,7 +119,7 @@ adminRouter.post('/logout', async(req, res) => {
             return res.sendStatus(401)
         }
         console.log(`${adminInstance}`)
-        console.log(`${username} Logged out - Refresh Token Reset`)
+        console.log(`Admin ID : ${userId} Logged out - Refresh Token Reset`)
         return res.sendStatus(200)
     })
 })
