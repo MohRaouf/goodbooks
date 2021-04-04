@@ -171,6 +171,12 @@ userRouter.patch("/update_bookshelf", async (req, res) => {
     );
 });
 
+// userId, bookId, body, 
+// add new entry in ReviewModel: {reviewId:x1, userId:x, bookId:y, body:z}
+// ad new element in the array of reviews in BookModel: {reviewId:x1}
+userRouter.post("/add_review",async (req, res)=>{})
+
+
 // assert book
 userRouter.patch("/assert_bookshelf", async (req, res) => {
     const reqUsername = req.body.username;
