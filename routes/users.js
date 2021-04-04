@@ -2,7 +2,7 @@ const express = require("express");
 const userRouter = express.Router();
 const UserModel = require("../models/user");
 const authenticateToken = require("../helpers/methods");
-const calculated= require("../helpers/calculated");
+const calculatedHelper = require("../helpers/calculated_helper");
 const bcrypt = require("bcrypt");
 const mongoose = require('mongoose');
 const BookModel = require("../models/book");
@@ -102,19 +102,38 @@ userRouter.delete("/remove_book", async (req, res) => {
                         {
                             $pull: { reviews: mongoose.Types.ObjectId(reviewDocs._id) },
                             $set:{
-                                avgRating: calculated.deleteRateFromBook(bookAvgRate, reviewDoc.ratingCount, parseInt(userRate)),
+                                avgRating: calculatedHelper.deleteRateFromBook(bookAvgRate, reviewDoc.ratingCount, parseInt(userRate)),
                             },
                             $inc: { ratingCount: reviewDoc.ratingCount>0?-1:0},
                         },
                         ).then((bookDoc)=>{
                             console.log("Updated Book info:", bookDoc)
-                            res.sendStatus(200)
-                        }).catch()
-                }).catch()
-            }).catch()
+                            res.send(200).status("DeletedOk")
+                        }).catch((err)=>{
+                            if(err){
+                                console.log("Error happened in deletion step\n:", err)
+                                res.send(503).status("BookDeleteErr")
+                            }
+                        })
+                }).catch((err)=>{
+                    if(err){
+                        console.log("Error happened in searching step\n:", err)
+                        res.send(503).status("BookSearchErr")
+                    }
+                })
+            }).catch((err)=>{
+                if(err){
+                    console.log("Error happened in searching review step\n:", err)
+                    res.send(503).status("ReviewErr")
+                }
+            })
         } 
     })
     .catch((err) => { //findOneAndUpdate ends
+        if(err){
+            console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
+            res.send(503).status("UserSearchingErr")
+        }
         console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
         res.sendStatus(404)
     })
