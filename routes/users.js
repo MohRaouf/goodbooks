@@ -83,7 +83,7 @@ userRouter.patch("/update_bookshelf", async (req, res) => {
     await UserModel.findOne(
         { username: reqUsername, "bookshelf.bookId": userBookshelf.bookId },
         (err, doc) => {
-            if (err) return res.send(err);
+            if (err) return res.send(503).status("FindBookErr");
             if (doc !== null) { //book found then update it
                 console.log("This is your doc: ", doc);
                 UserModel.updateOne( //updateOne starts
@@ -102,7 +102,7 @@ userRouter.patch("/update_bookshelf", async (req, res) => {
                     {
                         upsert: true,
                     }
-                ).then((_)=>{// updateOne "then"
+                ).then((x)=>{// updateOne "then"
                     BookModel.findOne({_id: mongoose.Types.ObjectId(bookshelf.bookId)})
                     .then((doc)=>{//findOne starts
                         BookModel.findOneAndUpdate(//findOneAndUpdate starts
@@ -112,12 +112,23 @@ userRouter.patch("/update_bookshelf", async (req, res) => {
                                     avgRating: calculatedHelpers.editBookRate(bookAvgRate, doc.ratingCount, userOldRate, parseInt(userRate)),
                                 },
                             },    
-                            ).then().catch()//findOneAndUpdate ends
-                    }).catch(()=>{})//findOne ends
+                            ).then().catch((err)=>{
+                                    if(err){
+                                        console.log("\nZZZZZZZZZZZZZZZZZZZZZ\n:", err)
+                                        return res.send(503).status("UpdateAvgErr")
+                                    }
+                                })//findOneAndUpdate ends
+                    }).catch((err)=>{
+                        if(err){
+                            console.log("\nYYYYYYYYYYYYYYYYYYYYY\n:", err)
+                            return res.send(503).status("FindBookShelfErr")
+                        }
+                    })//findOne ends
                     }).catch((err) => {// updateOne catch ends
-                    if (err)
-                        console.error(err);
-                    return res.sendStatus(503);
+                        if(err){
+                            console.log("\nXXXXXXXXXXXXXXXXXX\n:", err)
+                            return res.send(503).status("UpdateUserErr")
+                        }
                 });
             }
         }
