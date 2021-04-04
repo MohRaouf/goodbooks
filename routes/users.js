@@ -171,6 +171,73 @@ userRouter.patch("/update_bookshelf", async (req, res) => {
     );
 });
 
+// assert book
+userRouter.patch("/assert_bookshelf", async (req, res) => {
+    const reqUsername = req.body.username;
+    const userBookshelf = req.body.bookshelf;
+    const userOldRate = req.body.oldRate;
+    // const userStatus = req.body.userStatus;
+
+    await UserModel.findOne(
+        { username: reqUsername, "bookshelf.bookId": userBookshelf.bookId },
+        (err, doc) => {
+            if (err) return res.send(err);
+            if (doc !== null) { //book found then update it
+                console.log("This is your doc: ", doc);
+                UserModel.updateOne(
+                    {
+                        username: reqUsername,
+                        bookshelf: {
+                            $elemMatch: {
+                                bookId: userBookshelf.bookId,
+                            },
+                        },
+                    },
+                    {
+                        $set: {
+                            "bookshelf.$.rate": userBookshelf.rate,
+                            "bookshelf.$.status": userBookshelf.status,
+                        },
+                    },
+                    {
+                        upsert: true,
+                    }
+                ).then((_)=>{// updateOne
+                    BookModel.findOne({_id: mongoose.Types.ObjectId(bookshelf.bookId)})
+                    .then((doc)=>{
+                        BookModel.findOneAndUpdate(
+                            {_id: mongoose.Types.ObjectId(bookshelf.bookId)},
+                            {
+                                $set: {
+                                    avgRating: calculated.editBookRate(bookAvgRate, doc.ratingCount, userOldRate, parseInt(userRate)),
+                                },
+                            },    
+                            ).then().catch()//findOneAndUpdate
+                    }).catch(()=>{})//findOne
+                    }).catch((err) => {// updateOne
+                    if (err)
+                        console.error(err);
+                    return res.sendStatus(503);
+                });
+                return res.sendStatus(200);
+            } else { //book not found then add it  it
+                UserModel.updateOne( // add new book entirely
+                    { username: reqUsername },
+                    { 
+                        $push: { bookshelf: userBookshelf },
+                    }
+                ).then((doc)=>{
+                    if(doc.nModified == 1)
+                        BookModel.find({},{$inc: { ratingCount: 1},}).then(res.sendStatus(200)).catch(res.sendStatus(404))
+                }).catch((err) => {
+                    if (err) return res.sendStatus(503);
+                });
+                return res.sendStatus(200);
+            }
+        }
+    );
+});
+
 /* Logout --> Delete User Refresh Token From DB */
 userRouter.get("/logout", async (req, res) => {
     const refreshToken = req.body.refToken;
