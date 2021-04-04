@@ -1,9 +1,12 @@
-const express = require('express');
-const jwt = require('jsonwebtoken');
-const UserModel = require('../models/user')
-const jwtHelpers = require('../helpers/jwt_helper')
+const express = require("express");
 const userRouter = express.Router();
+const UserModel = require("../models/user");
+const calculatedHelper = require("../helpers/calculated_helper");
+const bcrypt = require("bcrypt");
 const mongoose = require('mongoose');
+const BookModel = require("../models/book");
+const jwt = require('jsonwebtoken');
+const jwtHelpers = require('../helpers/jwt_helper')
 
 
 /* Sign up New User */
@@ -61,13 +64,77 @@ userRouter.post("/login", async (req, res) => {
             })
 
         } else {
-            console.log('Invalid Username Or Password')
-            return res.sendStatus(401)
+            console.log("Invalid Username Or Password");
+            return res.sendStatus(401);
         }
     } else {
-        console.log('User Data NotFound')
-        return res.sendStatus(403)
+        console.log("User Data NotFound");
+        return res.sendStatus(403);
     }
+});
+
+userRouter.delete("/remove_book", async (req, res) => {
+    const reqUsername = req.body.username;
+    const book = req.body.bookId;
+    const userRate = req.body.userRate;
+    const bookAvgRate = req.body.avgRate;
+    await UserModel.findOneAndUpdate(
+        { username: reqUsername, "bookshelf.bookId": book },
+        {
+            $pull: { bookshelf: { bookId: book } },
+        },
+    ).then((userDoc) => { //findOneAndUpdate starts
+        console.log("BookId:", book)
+        console.log("UserId:", userDoc._id)
+        if(userDoc){
+            ReviewModel.findOneAndDelete({
+                userId: mongoose.Types.ObjectId(userDoc._id),
+                bookId: mongoose.Types.ObjectId(book)
+            },).then((reviewDocs)=>{
+                console.log("review:", reviewDocs)
+                BookModel.findOne({reviews: mongoose.Types.ObjectId(reviewDocs._id)}).then((reviewDoc)=>{
+                    console.log("book:", reviewDoc)
+                    console.log("book Id:", reviewDoc._id)
+                    console.log("Rating count:", reviewDoc.ratingCount)
+                    BookModel.findOneAndUpdate({ reviews: mongoose.Types.ObjectId(reviewDocs._id) },
+                        {
+                            $pull: { reviews: mongoose.Types.ObjectId(reviewDocs._id) },
+                            $set:{
+                                avgRating: calculatedHelper.deleteRateFromBook(bookAvgRate, reviewDoc.ratingCount, parseInt(userRate)),
+                            },
+                            $inc: { ratingCount: reviewDoc.ratingCount>0?-1:0},
+                        },
+                        ).then((bookDoc)=>{
+                            console.log("Updated Book info:", bookDoc)
+                            res.send(200).status("DeletedOk")
+                        }).catch((err)=>{
+                            if(err){
+                                console.log("Error happened in deletion step\n:", err)
+                                res.send(503).status("BookDeleteErr")
+                            }
+                        })
+                }).catch((err)=>{
+                    if(err){
+                        console.log("Error happened in searching step\n:", err)
+                        res.send(503).status("BookSearchErr")
+                    }
+                })
+            }).catch((err)=>{
+                if(err){
+                    console.log("Error happened in searching review step\n:", err)
+                    res.send(503).status("ReviewErr")
+                }
+            })
+        } 
+    })
+    .catch((err) => { //findOneAndUpdate ends
+        if(err){
+            console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
+            res.send(503).status("UserSearchingErr")
+        }
+        console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
+        res.sendStatus(404)
+    })
 })
 
 /* Update Access Token */
@@ -161,7 +228,21 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
 //when editing in rating or shelve in user home
 userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {
     const username = req.user;
-
+    const username = req.body.username;
+    const bookId = req.params.bookId;
+    const bookshelf = req.body.bookshelf;
+    const rate = req.body.rate;
+    const status = req.body.status;
+    try{
+        await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},{
+          ...(bookshelf.rate ? { "bookshelf.$.rate": bookshelf.rate }: {}),
+          ...(bookshelf.status ? { "bookshelf.$.status": bookshelf.status }: {})
+        }).then((data)=>{
+            console.log(data)
+        })
+    }catch(e){
+        console.log(e.message)
+    }
 
 })
 

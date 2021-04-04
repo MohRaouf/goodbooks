@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require("express");
 const adminRouter = express.Router();
 const jwt = require('jsonwebtoken');
 const AdminModel = require('../models/admin')
@@ -27,7 +27,14 @@ adminRouter.post("/signup", async (req, res) => {
         }
         res.sendStatus(500)
     })
-})
+    .catch((err) => {
+      console.error("====Error===>", err);
+      if (err.code == 11000) {
+        return res.status(409).send("Duplicated Username"); // username duplication - conflict
+      }
+      res.sendStatus(500);
+    });
+});
 
 //Login and send Access Token + Refresh Token
 adminRouter.post("/login", async (req, res) => {
@@ -64,7 +71,7 @@ adminRouter.post("/login", async (req, res) => {
         console.log('Admin Data NotFound')
         return res.sendStatus(401)
     }
-})
+});
 
 //Update and Send New Access Token by Refresh Token
 adminRouter.get("/login", async (req, res) => {
