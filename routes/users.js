@@ -73,7 +73,7 @@ userRouter.post("/login", async (req, res) => {
     }
 });
 
-userRouter.delete("/remove_book", async (req, res) => {
+userRouter.delete("/remove_book", jwtHelpers.verifyAccessToken, async (req, res) => {
     const reqUsername = req.body.username;
     const book = req.body.bookId;
     const userRate = req.body.userRate;
