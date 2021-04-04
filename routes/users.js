@@ -2,7 +2,7 @@ const express = require("express");
 const userRouter = express.Router();
 const UserModel = require("../models/user");
 const authenticateToken = require("../helpers/methods");
-const calculated= require("../helpers/calculated");
+const calculatedHelper = require("../helpers/calculated_helper");
 const bcrypt = require("bcrypt");
 const mongoose = require('mongoose');
 const BookModel = require("../models/book");
@@ -75,102 +75,6 @@ userRouter.post("/login", async (req, res) => {
     }
 });
 
-userRouter.delete("/remove_book", async (req, res) => {
-    const reqUsername = req.body.username;
-    const book = req.body.bookId;
-    const userRate = req.body.userRate;
-    const bookAvgRate = req.body.avgRate;
-    await UserModel.findOneAndUpdate(
-        { username: reqUsername, "bookshelf.bookId": book },
-        {
-            $pull: { bookshelf: { bookId: book } },
-        },
-    ).then((userDoc) => { //findOneAndUpdate starts
-        console.log("BookId:", book)
-        console.log("UserId:", userDoc._id)
-        if(userDoc){
-            ReviewModel.findOneAndDelete({
-                userId: mongoose.Types.ObjectId(userDoc._id),
-                bookId: mongoose.Types.ObjectId(book)
-            },).then((reviewDocs)=>{
-                console.log("review:", reviewDocs)
-                BookModel.findOne({reviews: mongoose.Types.ObjectId(reviewDocs._id)}).then((reviewDoc)=>{
-                    console.log("book:", reviewDoc)
-                    console.log("book Id:", reviewDoc._id)
-                    console.log("Rating count:", reviewDoc.ratingCount)
-                    BookModel.findOneAndUpdate({ reviews: mongoose.Types.ObjectId(reviewDocs._id) },
-                        {
-                            $pull: { reviews: mongoose.Types.ObjectId(reviewDocs._id) },
-                            $set:{
-                                avgRating: calculated.deleteRateFromBook(bookAvgRate, reviewDoc.ratingCount, parseInt(userRate)),
-                            },
-                            $inc: { ratingCount: reviewDoc.ratingCount>0?-1:0},
-                        },
-                        ).then((bookDoc)=>{
-                            console.log("Updated Book info:", bookDoc)
-                            res.sendStatus(200)
-                        }).catch()
-                }).catch()
-            }).catch()
-        } 
-    })
-    .catch((err) => { //findOneAndUpdate ends
-        console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
-        res.sendStatus(404)
-    })
-})
-
-
-
-// edit bookshelf
-userRouter.patch("/update_bookshelf", async (req, res) => {
-    const reqUsername = req.body.username;
-    const userBookshelf = req.body.bookshelf;
-    const userOldRate = req.body.oldRate;
-    await UserModel.findOne(
-        { username: reqUsername, "bookshelf.bookId": userBookshelf.bookId },
-        (err, doc) => {
-            if (err) return res.send(err);
-            if (doc !== null) { //book found then update it
-                console.log("This is your doc: ", doc);
-                UserModel.updateOne( //updateOne starts
-                    {// find book by user and bookid
-                        username: reqUsername,
-                        bookshelf: {
-                            $elemMatch: { bookId: userBookshelf.bookId },
-                        },
-                    },
-                    { //update the bookshelf of the user
-                        $set: {
-                            "bookshelf.$.rate": userBookshelf.rate,
-                            "bookshelf.$.status": userBookshelf.status,
-                        },
-                    },
-                    {
-                        upsert: true,
-                    }
-                ).then((_)=>{// updateOne "then"
-                    BookModel.findOne({_id: mongoose.Types.ObjectId(bookshelf.bookId)})
-                    .then((doc)=>{//findOne starts
-                        BookModel.findOneAndUpdate(//findOneAndUpdate starts
-                            {_id: mongoose.Types.ObjectId(bookshelf.bookId)},
-                            {
-                                $set: {
-                                    avgRating: calculated.editBookRate(bookAvgRate, doc.ratingCount, userOldRate, parseInt(userRate)),
-                                },
-                            },    
-                            ).then().catch()//findOneAndUpdate ends
-                    }).catch(()=>{})//findOne ends
-                    }).catch((err) => {// updateOne catch ends
-                    if (err)
-                        console.error(err);
-                    return res.sendStatus(503);
-                });
-            }
-        }
-    );
-});
-
 // assert book
 userRouter.patch("/assert_bookshelf", async (req, res) => {
     const reqUsername = req.body.username;
@@ -209,15 +113,27 @@ userRouter.patch("/assert_bookshelf", async (req, res) => {
                             {_id: mongoose.Types.ObjectId(bookshelf.bookId)},
                             {
                                 $set: {
-                                    avgRating: calculated.editBookRate(bookAvgRate, doc.ratingCount, userOldRate, parseInt(userRate)),
+                                    avgRating: calculatedHelper.editBookRate(bookAvgRate, doc.ratingCount, userOldRate, parseInt(userRate)),
                                 },
                             },    
-                            ).then().catch()//findOneAndUpdate
-                    }).catch(()=>{})//findOne
+                            ).then((doc)=>{
+                                return res.send(200).status("UpdatedOk");
+                            }).catch((err)=>{
+                                if(err){
+                                    console.log("\nXXXXXXXXXXXXXXXXXXXX\n:", err)
+                                    return res.send(503).status("UpdateAvgErr")
+                                }
+                            })//findOneAndUpdate
+                    }).catch((err)=>{
+                        if(err){
+                            console.log("\nYYYYYYYYYYYYYYYYYYYY\n:", err)
+                            return res.send(503).status("FindBookErr")
+                        }})//findOne
                     }).catch((err) => {// updateOne
-                    if (err)
-                        console.error(err);
-                    return res.sendStatus(503);
+                        if(err){
+                            console.log("\nZZZZZZZZZZZZZZZZZZZZZZZZZZ\n:", err)
+                            return res.send(503).status("UpdateShelfErr")
+                        }
                 });
                 return res.sendStatus(200);
             } else { //book not found then add it  it
