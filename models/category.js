@@ -3,8 +3,7 @@ const mongoose = require('mongoose')
 
 //creating category Schema 
 const categorySchema = new mongoose.Schema({
-
-    name  : { type : String, required : true },
+    name  : { type : String, required : true, unique:true },
     books : [{type: mongoose.Schema.Types.ObjectId, ref: 'book'}],
 })
 

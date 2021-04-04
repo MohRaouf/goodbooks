@@ -2,12 +2,11 @@
 const mongoose = require('mongoose')
 //creating author schema 
 const authorSchema = new mongoose.Schema({
-
     fname : { type : String, minimumLength : 3, required : true },
-    name : { type : String, minimumLength : 3, required : true },
+    name :  { type : String, minimumLength : 3, required : true },
     photo : { data : Buffer,  contentType : String },
     dob   : { type : Date, required : true },
-    gender: { type : String , enum : ["Male","Female"], required : true },
+    gender: { type : String , enum : ["m","f"], required : true },
     books : [{type: mongoose.Schema.Types.ObjectId, ref: 'book'}],
 })
 

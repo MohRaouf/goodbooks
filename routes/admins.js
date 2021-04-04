@@ -1,14 +1,77 @@
-const express = require('express');
+const express = require("express");
 const adminRouter = express.Router();
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcrypt')
-const authenticateToken = require('../helpers/methods')
-const AdminModel = require('../models/admin')
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const authenticateToken = require("../helpers/methods");
+const AdminModel = require("../models/admin");
+const CategoryModel = require('../models/category')
+const AuthorModel = require('../models/author')
+const BookModel = require('../models/book')
 
 
-adminRouter.get("/", authenticateToken, async(req, res) => {
-    res.send("OK")
-})
+adminRouter.post("/books", async (req, res) => {
+    const BookInstance = new BookModel({
+      name: req.body.name,
+      description: req.body.description,
+      authorId: req.body.authorId,
+      categoryId: req.body.categoryId,
+    });
+    await BookInstance.save()
+      .then((book) => {
+        console.log(`New  Added : ${book}`);
+        res.sendStatus(201);
+      })
+      .catch((err) => {
+        console.error("====Error===>", err);
+        if (err.code == 11000) {
+          return res.status(409).send("Duplicated Username"); // username duplication - conflict
+        }
+        res.sendStatus(500);
+      });
+  });
+  adminRouter.post("/authors", async (req, res) => {
+    const AuthorInstance = new AuthorModel({
+      fname: req.body.fname,
+      name: req.body.name,
+      dob: req.body.dob,
+      gender: req.body.gender,
+    });
+    await AuthorInstance.save()
+      .then((author) => {
+        console.log(`New  Added : ${author}`);
+        res.sendStatus(201);
+      })
+      .catch((err) => {
+        console.error("====Error===>", err);
+        if (err.code == 11000) {
+          return res.status(409).send("Duplicated Username"); // username duplication - conflict
+        }
+        res.sendStatus(500);
+      });
+  });
+  adminRouter.post("/categories", async (req, res) => {
+    const CategoryInstance = new CategoryModel({
+      name: req.body.name,
+    });
+    await CategoryInstance.save()
+      .then((cat) => {
+        console.log(`New  Added : ${cat}`);
+        res.sendStatus(201);
+      })
+      .catch((err) => {
+        console.error("====Error===>", err);
+        if (err.code == 11000) {
+          return res.status(409).send("Duplicated Username"); // username duplication - conflict
+        }
+        res.sendStatus(500);
+      });
+  });
+  
+  
+// adminRouter.get("/", authenticateToken, async (req, res) => {
+//   res.send("OK");
+//     next()
+// });
 
 // Middleware to parse the JWT Token in the Header
 // and modify the request body with the parsed data
@@ -32,127 +95,147 @@ adminRouter.get("/", authenticateToken, async(req, res) => {
 //     })
 // }
 
-//Sign up 
-adminRouter.patch("/auth", async(req, res) => {
-    const reqUsername = req.body.username;
-    const reqPassword = req.body.password;
+//Sign up
+adminRouter.patch("/auth", async (req, res) => {
+  const reqUsername = req.body.username;
+  const reqPassword = req.body.password;
 
-    const adminInstance = new AdminModel({
-        username: reqUsername,
-        password: reqPassword
+  const adminInstance = new AdminModel({
+    username: reqUsername,
+    password: reqPassword,
+  });
+  await adminInstance
+    .save()
+    .then((admin) => {
+      console.log(`New Admin Added : ${admin}`);
+      res.sendStatus(201);
     })
-    await adminInstance.save().then((admin) => {
-        console.log(`New Admin Added : ${admin}`)
-        res.sendStatus(201);
-    }).catch((err) => {
-        console.error("====Error===>", err)
-        if (err.code == 11000) {
-            return res.status(409).send("Duplicated Username") // username duplication - conflict
-        }
-        res.sendStatus(500)
-    })
-})
+    .catch((err) => {
+      console.error("====Error===>", err);
+      if (err.code == 11000) {
+        return res.status(409).send("Duplicated Username"); // username duplication - conflict
+      }
+      res.sendStatus(500);
+    });
+});
 
 //Login and send Access Token + Refresh Token
-adminRouter.post("/auth", async(req, res) => {
-    const reqUsername = req.body.username;
-    const reqPassword = req.body.password;
+adminRouter.post("/auth", async (req, res) => {
+  const reqUsername = req.body.username;
+  const reqPassword = req.body.password;
 
-    // Verify Login Info from Database
-    const adminInstance = await AdminModel.findOne({ username: reqUsername })
-        .catch((err) => {
-            console.error(err)
-            return res.sendStatus(503)
-        })
+  // Verify Login Info from Database
+  const adminInstance = await AdminModel.findOne({
+    username: reqUsername,
+  }).catch((err) => {
+    console.error(err);
+    return res.sendStatus(503);
+  });
 
-    //Username Found
-    if (adminInstance) {
-        if (await bcrypt.compare(reqPassword, adminInstance.password)) {
-            console.log("Admin Logged In Successfully")
-            const username = { username: reqUsername }
-            const accessToken = generateAcessToken(username)
-            const refreshToken = jwt.sign(username, process.env.REFRESH_TOKEN_SECRET)
+  //Username Found
+  if (adminInstance) {
+    if (await bcrypt.compare(reqPassword, adminInstance.password)) {
+      console.log("Admin Logged In Successfully");
+      const username = { username: reqUsername };
+      const accessToken = generateAcessToken(username);
+      const refreshToken = jwt.sign(username, process.env.REFRESH_TOKEN_SECRET);
 
-            // adminInstance.refreshToken = refreshToken;
-            AdminModel.updateOne({ username: reqUsername }, { refreshToken: refreshToken }, { new: true })
-                .catch((err) => {
-                    console.error("====Error===>", err)
-                    return res.sendStatus(500)
-                })
+      // adminInstance.refreshToken = refreshToken;
+      AdminModel.updateOne(
+        { username: reqUsername },
+        { refreshToken: refreshToken },
+        { new: true }
+      ).catch((err) => {
+        console.error("====Error===>", err);
+        return res.sendStatus(500);
+      });
 
-            return res.json({ accessToken: accessToken, refreshToken: refreshToken })
-
-        } else {
-            console.log('Invalid Username Or Password')
-            return res.sendStatus(401)
-        }
+      return res.json({ accessToken: accessToken, refreshToken: refreshToken });
     } else {
-        console.log('Admin Data NotFound')
-        return res.sendStatus(403)
+      console.log("Invalid Username Or Password");
+      return res.sendStatus(401);
     }
-})
+  } else {
+    console.log("Admin Data NotFound");
+    return res.sendStatus(403);
+  }
+});
 
 //Update and Send New Access Token by Refresh Token
-adminRouter.get("/auth", async(req, res) => {
+adminRouter.get("/auth", async (req, res) => {
+  const refreshToken = req.body.refToken;
+  if (refreshToken == null) return res.sendStatus(401);
 
-    const refreshToken = req.body.refToken;
-    if (refreshToken == null) return res.sendStatus(401);
+  jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET,
+    async (err, user) => {
+      if (err) return res.sendStatus(403);
+      const username = user.username;
+      console.log(`Extracted Username from RefreshToken ==> ${username}`);
 
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, user) => {
-        if (err) return res.sendStatus(403)
-        const username = user.username;
-        console.log(`Extracted Username from RefreshToken ==> ${username}`)
+      const adminInstance = await AdminModel.findOne({
+        username: username,
+      }).catch((err) => {
+        console.error(err);
+        return res.sendStatus(503);
+      });
 
-        const adminInstance = await AdminModel.findOne({ username: username })
-            .catch((err) => {
-                console.error(err);
-                return res.sendStatus(503)
-            })
+      if (!adminInstance) {
+        console.error("Admin Refresh Token Is not found");
+        return res.status(404).send(`Admin Doesn't Exist`);
+      }
 
-        if (!adminInstance) {
-            console.error('Admin Refresh Token Is not found')
-            return res.status(404).send(`Admin Doesn't Exist`)
-        }
+      if (
+        adminInstance.refreshToken != null &&
+        adminInstance.refreshToken === refreshToken
+      ) {
+        console.log(`${adminInstance.refreshToken}`);
+        const newAccessToken = generateAcessToken({ username: user.username });
+        console.log("Access Token Updated");
+        return res.json({ accessToken: newAccessToken });
+      }
 
-        if (adminInstance.refreshToken != null && adminInstance.refreshToken === refreshToken) {
-            console.log(`${adminInstance.refreshToken}`)
-            const newAccessToken = generateAcessToken({ username: user.username })
-            console.log('Access Token Updated')
-            return res.json({ accessToken: newAccessToken })
-        }
+      console.error("Admin Refresh Token Is not found");
+      return res.status(401).send(`${username} Logged Out`);
+    }
+  );
+});
 
-        console.error('Admin Refresh Token Is not found')
-        return res.status(401).send(`${username} Logged Out`)
-    })
-})
+adminRouter.delete("/auth", async (req, res) => {
+  const refreshToken = req.body.refToken;
+  if (refreshToken == null) return res.sendStatus(401);
+  jwt.verify(
+    refreshToken,
+    process.env.REFRESH_TOKEN_SECRET,
+    async (err, user) => {
+      if (err) return res.sendStatus(403);
+      const username = user.username;
+      console.log(`Extracted Username from RefreshToken ==> ${username}`);
 
-adminRouter.delete('/auth', async(req, res) => {
-
-    const refreshToken = req.body.refToken;
-    if (refreshToken == null) return res.sendStatus(401);
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, user) => {
-
-        if (err) return res.sendStatus(403)
-        const username = user.username;
-        console.log(`Extracted Username from RefreshToken ==> ${username}`)
-
-        const adminInstance = await AdminModel.updateOne({ username: username }, { refreshToken: null }, { new: true })
-            .catch((err) => {
-                console.error(err);
-                return res.sendStatus(503)
-            })
-        if (!adminInstance) {
-            console.error('Admin Refresh Token Is not found')
-            return res.sendStatus(401)
-        }
-        console.log(`${adminInstance}`)
-        console.log(`${username} Logged out - Refresh Token Reset`)
-        return res.sendStatus(200)
-    })
-})
+      const adminInstance = await AdminModel.updateOne(
+        { username: username },
+        { refreshToken: null },
+        { new: true }
+      ).catch((err) => {
+        console.error(err);
+        return res.sendStatus(503);
+      });
+      if (!adminInstance) {
+        console.error("Admin Refresh Token Is not found");
+        return res.sendStatus(401);
+      }
+      console.log(`${adminInstance}`);
+      console.log(`${username} Logged out - Refresh Token Reset`);
+      return res.sendStatus(200);
+    }
+  );
+});
 
 function generateAcessToken(username) {
-    return (jwt.sign(username, process.env.ACCESS_TOKEN_SECERET, { expiresIn: '25s' })) //50 mins
+  return jwt.sign(username, process.env.ACCESS_TOKEN_SECERET, {
+    expiresIn: "25s",
+  }); //50 mins
 }
 
 module.exports = adminRouter;
