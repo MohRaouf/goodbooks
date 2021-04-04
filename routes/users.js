@@ -122,55 +122,6 @@ userRouter.delete("/remove_book", async (req, res) => {
 
 
 
-// edit bookshelf
-userRouter.patch("/update_bookshelf", async (req, res) => {
-    const reqUsername = req.body.username;
-    const userBookshelf = req.body.bookshelf;
-    const userOldRate = req.body.oldRate;
-    await UserModel.findOne(
-        { username: reqUsername, "bookshelf.bookId": userBookshelf.bookId },
-        (err, doc) => {
-            if (err) return res.send(err);
-            if (doc !== null) { //book found then update it
-                console.log("This is your doc: ", doc);
-                UserModel.updateOne( //updateOne starts
-                    {// find book by user and bookid
-                        username: reqUsername,
-                        bookshelf: {
-                            $elemMatch: { bookId: userBookshelf.bookId },
-                        },
-                    },
-                    { //update the bookshelf of the user
-                        $set: {
-                            "bookshelf.$.rate": userBookshelf.rate,
-                            "bookshelf.$.status": userBookshelf.status,
-                        },
-                    },
-                    {
-                        upsert: true,
-                    }
-                ).then((_)=>{// updateOne "then"
-                    BookModel.findOne({_id: mongoose.Types.ObjectId(bookshelf.bookId)})
-                    .then((doc)=>{//findOne starts
-                        BookModel.findOneAndUpdate(//findOneAndUpdate starts
-                            {_id: mongoose.Types.ObjectId(bookshelf.bookId)},
-                            {
-                                $set: {
-                                    avgRating: calculated.editBookRate(bookAvgRate, doc.ratingCount, userOldRate, parseInt(userRate)),
-                                },
-                            },    
-                            ).then().catch()//findOneAndUpdate ends
-                    }).catch(()=>{})//findOne ends
-                    }).catch((err) => {// updateOne catch ends
-                    if (err)
-                        console.error(err);
-                    return res.sendStatus(503);
-                });
-            }
-        }
-    );
-});
-
 /* Logout --> Delete User Refresh Token From DB */
 userRouter.get("/logout", async (req, res) => {
     const refreshToken = req.body.refToken;
