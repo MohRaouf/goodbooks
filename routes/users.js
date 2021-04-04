@@ -2,7 +2,7 @@ const express = require("express");
 const userRouter = express.Router();
 const UserModel = require("../models/user");
 const authenticateToken = require("../helpers/methods");
-const calculated= require("../helpers/calculated");
+const calculatedHelpers = require("../helpers/calculated_helper");
 const bcrypt = require("bcrypt");
 const mongoose = require('mongoose');
 const BookModel = require("../models/book");
@@ -75,53 +75,6 @@ userRouter.post("/login", async (req, res) => {
     }
 });
 
-userRouter.delete("/remove_book", async (req, res) => {
-    const reqUsername = req.body.username;
-    const book = req.body.bookId;
-    const userRate = req.body.userRate;
-    const bookAvgRate = req.body.avgRate;
-    await UserModel.findOneAndUpdate(
-        { username: reqUsername, "bookshelf.bookId": book },
-        {
-            $pull: { bookshelf: { bookId: book } },
-        },
-    ).then((userDoc) => { //findOneAndUpdate starts
-        console.log("BookId:", book)
-        console.log("UserId:", userDoc._id)
-        if(userDoc){
-            ReviewModel.findOneAndDelete({
-                userId: mongoose.Types.ObjectId(userDoc._id),
-                bookId: mongoose.Types.ObjectId(book)
-            },).then((reviewDocs)=>{
-                console.log("review:", reviewDocs)
-                BookModel.findOne({reviews: mongoose.Types.ObjectId(reviewDocs._id)}).then((reviewDoc)=>{
-                    console.log("book:", reviewDoc)
-                    console.log("book Id:", reviewDoc._id)
-                    console.log("Rating count:", reviewDoc.ratingCount)
-                    BookModel.findOneAndUpdate({ reviews: mongoose.Types.ObjectId(reviewDocs._id) },
-                        {
-                            $pull: { reviews: mongoose.Types.ObjectId(reviewDocs._id) },
-                            $set:{
-                                avgRating: calculated.deleteRateFromBook(bookAvgRate, reviewDoc.ratingCount, parseInt(userRate)),
-                            },
-                            $inc: { ratingCount: reviewDoc.ratingCount>0?-1:0},
-                        },
-                        ).then((bookDoc)=>{
-                            console.log("Updated Book info:", bookDoc)
-                            res.sendStatus(200)
-                        }).catch()
-                }).catch()
-            }).catch()
-        } 
-    })
-    .catch((err) => { //findOneAndUpdate ends
-        console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
-        res.sendStatus(404)
-    })
-})
-
-
-
 // edit bookshelf
 userRouter.patch("/update_bookshelf", async (req, res) => {
     const reqUsername = req.body.username;
@@ -156,7 +109,7 @@ userRouter.patch("/update_bookshelf", async (req, res) => {
                             {_id: mongoose.Types.ObjectId(bookshelf.bookId)},
                             {
                                 $set: {
-                                    avgRating: calculated.editBookRate(bookAvgRate, doc.ratingCount, userOldRate, parseInt(userRate)),
+                                    avgRating: calculatedHelpers.editBookRate(bookAvgRate, doc.ratingCount, userOldRate, parseInt(userRate)),
                                 },
                             },    
                             ).then().catch()//findOneAndUpdate ends
