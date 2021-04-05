@@ -323,7 +323,6 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
 
 //when editing in rating or shelve in user home
 userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {
-    const username = req.user;
     const username = req.body.username;
     const bookId = req.params.bookId;
     const bookshelf = req.body.bookshelf;
