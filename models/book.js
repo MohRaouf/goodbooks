@@ -1,20 +1,34 @@
-// Requiring Mongoose for communicate with mongodb data
-const mongoose = require('mongoose')
+const mongoose = require('mongoose');
 
-const bookSchema = new mongoose.Schema({
-    //_id Auto increment [not finshed = > seaarch ]
+const BookSchema = new mongoose.Schema({
     name: { type: String, required: true, index: true },
     photo: { data: Buffer, contentType: String },
     description: { type: String, required: true },
     reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'review' }],
     authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'author', require: true },
-    categoryId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'category', require: true }],
-    avgRating: {}, //calculated
-    ratingCount: {}, //calculated
+
+    categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'category', require: true },
+    avgRating: { type: Number, default: 0 }, //calculated
+    ratingCount: { type: Number, default: 0 }, //calculated
 })
 
-//creating book model to use it in validation with a middleware
-const BookModel = mongoose.model('book', bookSchema)
+BookSchema.statics.getTopBooks=function (rate){
+    return this.find({"$expr": {"$gte": [{$size: "$reviews"}, 20]}},{ "avgRating" : {$gt :parseInt(rate)}},);
+  }
 
-//exporting the book model 
-module.export = BookModel
+
+BookSchema.post('save', async function(doc) {
+    console.log('In Book Save Middleware')
+
+    await this.model('author').findByIdAndUpdate(doc.authorId, { $push: { books: doc } }).catch((err) => {
+        console.error(err)
+        return res.sendStatus(503)
+    })
+    await this.model('category').findByIdAndUpdate(doc.categoryId, { $push: { books: doc } }).catch((err) => {
+        console.error(err)
+        return res.sendStatus(503)
+    })
+});
+
+const BookModel = mongoose.model('book', BookSchema)
+module.exports = BookModel
