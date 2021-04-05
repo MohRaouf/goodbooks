@@ -1,8 +1,11 @@
+const deleteRate = require('../helpers/calculated_helper');
 const express = require('express');
 const userRouter = express.Router();
 const UserModel = require('../models/user')
+const BookModel = require("../models/book");
 const authenticateToken = require('../helpers/methods')
-
+const mongoose = require('mongoose')
+const calculatedHelper = require("../helpers/calculated_helper");
 /* Sign up New User */
 userRouter.post("/signup", async(req, res) => {
 
@@ -10,9 +13,11 @@ userRouter.post("/signup", async(req, res) => {
         username: req.body.username,
         fname: req.body.fname,
         lname: req.body.lname,
+        password:req.body.password,
         dob: req.body.dob,
         email: req.body.email,
         gender: req.body.gender,
+        bookshelf:req.body.bookshelf,
         ...(req.body.photo ? { photo: req.body.photo } : {})
     })
     await userInstance.save().then((user) => {
@@ -66,7 +71,7 @@ userRouter.post("/login", async(req, res) => {
     }
 })
 
-/* Logout --> Delete User Refresh Token From DB */
+/* Logout --> Delete User Refresh Token From DB*/
 userRouter.get("/logout", async(req, res) => {
 
     const refreshToken = req.body.refToken;
@@ -116,10 +121,119 @@ userRouter.get("/", authenticateToken, async(req, res) => {
 
 
 //when editing in rating or shelve in user home
-userRouter.patch("/:bookid", authenticateToken, async(req, res) => {
-    const username = req.user;
+// userRouter.patch("/:bookid", authenticateToken, async(req, res) => {
+//     const username = req.user;
+//     //const {bookId} = req.params
+//     console.log(user);
+//     // console.log(bookId) 
+// })
+userRouter.patch("/:bookId", async (req,res)=>{
+    const username = req.body.username;
+    const bookId = req.params.bookId;
+    const bookshelf = req.body.bookshelf;
+    const rate = req.body.bookshelf.rate;
+    const status = req.body.bookshelf.status;
 
+    const newStatus = req.body.newStatus;
+    const bookAvg = req.body.bookAvg;
+    const newRate= req.body.newRate;
 
+    try{
+        await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},
+        {
+            ...(bookshelf.rate ? { "bookshelf.$.rate": newRate }: {}),
+            ...(bookshelf.status ? { "bookshelf.$.status": newStatus}: {})
+            /////////////////////////////////
+        }).then( (userDoc)=>{
+                BookModel.findOne(
+                    {_id :mongoose.Types.ObjectId(bookId)}
+                ).then((bookDoc)=>{
+                const oldRate = bookDoc.avgRating;
+                const ratingCount = bookDoc.ratingCount;
+                console.log(bookDoc)
+                BookModel.findOneAndUpdate({_id :mongoose.Types.ObjectId(bookId)},{
+                    $set:{
+                        avgRating : calculatedHelper.editBookRate(bookAvg,ratingCount,rate,newRate)
+                    }
+                }).then((data)=>{
+                    res.sendStatus(200)
+                })
+            })
+        })
+    }catch(e){ 
+        res.sendStatus(503).sendStatus(e.message)
+    }
+    /**
+     * oldAvg
+     * count 
+     * 
+     */
+    // if(rate != null && status != null){
+    //     try{
+    //         await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},{
+    //           ...(bookshelf.rate ? { "bookshelf.$.rate": bookshelf.rate }: {}),
+    //           ...(bookshelf.status ? { "bookshelf.$.status": bookshelf.status }: {})
+    //         }).then((data)=>{
+    //             console.log(data)
+    //         })
+    //     }catch(e){
+    //         res.sendStatus(404).sendStatus(e.message)
+    //     }
+    // }else if(rate != null){
+
+    //     try{
+    //         await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},{
+    //           ...(bookshelf.rate ? { "bookshelf.$.rate": bookshelf.rate }: {})
+    //         }).then((data)=>{
+    //             console.log(data)
+    //         })
+    //     }catch(e){
+    //         res.sendStatus(404).sendStatus(e.message)
+    //     }
+    // }else if(status != null){
+
+    //     try{
+    //         await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},{
+    //           ...(bookshelf.status ? { "bookshelf.$.status": bookshelf.status }: {})
+    //         }).then((data)=>{
+    //             console.log(data)
+    //         })
+    //     }catch(e){
+    //         res.sendStatus(404).sendStatus(e.message)
+    //     }
+    // }else{
+    //     try{
+        
+    //     }catch(e){
+    //         res.sendStatus(404).sendStatus(e.message)
+    //     }
+    // }
+   
 })
-
 module.exports = userRouter;
+
+
+
+
+
+
+
+
+
+
+
+
+/**\
+ * 
+ * 
+ * {
+    "username": "mostafa",
+    "bookshelf": {
+        "bookId":"605b73578bfeb06773557dcb",
+        "rate":3,
+        "status":"w"
+        },
+        "newRate": 2,
+        "bookAvg": 3.5
+}
+ */

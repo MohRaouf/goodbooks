@@ -4,6 +4,7 @@
     "description": "this Website contains different books from different categories, you can view the book views and ratings, rate and review books, arrange your own book shelve",
     "main": "goodbooks.js",
     "scripts": {
+        "start": "nodemon .",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {

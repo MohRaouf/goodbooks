@@ -9,12 +9,12 @@ const bookSchema = new mongoose.Schema({
     reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'review' }],
     authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'author', require: true },
     categoryId: [{ type: mongoose.Schema.Types.ObjectId, ref: 'category', require: true }],
-    avgRating: {}, //calculated
-    ratingCount: {}, //calculated
+    avgRating: {type: Number , default: 0}, //calculated
+    ratingCount: {type: Number,  default: 0}, //calculated
 })
 
 //creating book model to use it in validation with a middleware
 const BookModel = mongoose.model('book', bookSchema)
 
 //exporting the book model 
-module.export = BookModel
+module.exports = BookModel
