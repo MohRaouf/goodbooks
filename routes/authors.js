@@ -5,20 +5,42 @@ const authorRouter = express.Router();
 
 /* Get All Authors no need for Authentication */
 authorRouter.get("/", async(req, res) => {
-
+    const allAuthors = await AuthorModel.find()
+        .catch((err) => {
+            console.error(err)
+            return res.status(400).send("Bad Request")
+        })
+    console.log("All Authors : ", allAuthors)
+    return res.json(allAuthors);
 })
 //when request to get popular author
 // >>> with query
-authorRouter.get("/top",async (request,response)=>{
-    try{
-        const topAuthors=await AuthorModel.getTopAuthors(request.query.size);
-        response.json(topAuthors);}
-    catch(e){console.log(e.message);}
+authorRouter.get("/top",async (req,res)=>{
+        // const topAuthors=await AuthorModel.getTopAuthors(request.query.size);
+        const topAuthors=await AuthorModel.getTopAuthors(1)
+        .catch((err)=>{
+            console.log(err);
+            return res.status(500).send("Internal Server Error")
+        })
+        if(topAuthors){return res.json(topAuthors)}
+        else {return res.status(404).send("Not Found")}
 })
 
 /* Get Author by ID no need for Authentication */
 authorRouter.get("/:author_id", async(req, res) => {
-
+    const id = req.params.author_id;
+    console.log(id)
+    const author = await AuthorModel.findById(id).populate('book').exec()
+        .catch((err) => {
+            console.log(err)
+            return res.status(500).send('Internal server error')
+        })
+    if (author) {
+        console.log(author)
+        return res.json(author);
+    }
+    console.log('Not Found')
+    return res.status(404).send("Not Found")
 })
 
 /* Insert new Author need Authentication */
