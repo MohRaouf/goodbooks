@@ -239,7 +239,7 @@ userRouter.delete("/remove_book_old", async (req, res) => {
 
 
 /* Update Access Token */
-userRouter.get("/login", async (req, res) => {
+userRouter.post("/refresh", async (req, res) => {
 
 
     const refreshToken = req.body.refreshToken;
@@ -327,10 +327,9 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
 });
 
 
-//when editing in rating or shelve in user home
-userRouter.patch("/:bookId", jwtHelpers.verifyAccessToken, async (req,res)=>{
 
-    const username = req.body.username;
+userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {
+    const userId = req.userId;
     const bookId = req.params.bookId;
     const bookshelf = req.body.bookshelf;
     const rate = req.body.bookshelf.rate;
@@ -364,8 +363,6 @@ userRouter.patch("/:bookId", jwtHelpers.verifyAccessToken, async (req,res)=>{
         })
     }catch(e){ 
         res.sendStatus(503).sendStatus(e.message)
-    }
-
-   
+    } 
 })
 module.exports = userRouter;
