@@ -1,3 +1,5 @@
+
+const deleteRate = require('../helpers/calculated_helper');
 const express = require("express");
 const userRouter = express.Router();
 const UserModel = require("../models/user");
@@ -7,7 +9,7 @@ const mongoose = require('mongoose');
 const BookModel = require("../models/book");
 const jwt = require('jsonwebtoken');
 const jwtHelpers = require('../helpers/jwt_helper')
-
+const ReviewModel = require("../models/review");
 
 /* Sign up New User */
 userRouter.post("/signup", async (req, res) => {
@@ -16,10 +18,12 @@ userRouter.post("/signup", async (req, res) => {
         username: req.body.username,
         fname: req.body.fname,
         lname: req.body.lname,
+
         password: req.body.password,
         dob: req.body.dob,
         email: req.body.email,
         gender: req.body.gender,
+        bookshelf:req.body.bookshelf,
         ...(req.body.photo ? { photo: req.body.photo } : {})
     })
     console.log(userInstance)
@@ -73,7 +77,98 @@ userRouter.post("/login", async (req, res) => {
     }
 });
 
-userRouter.delete("/remove_book", async (req, res) => {
+const removeBookFromShelf = async (res, userName, bookid)=>{
+    try{
+        result = await UserModel.findOneAndUpdate(
+            { username: userName, "bookshelf.bookId": bookid },
+                {
+                    $pull: { bookshelf: { bookId: bookid } },
+                })
+                .then((doc)=>{return doc})
+                .catch((err)=>{res.sendStatus(424); console.log("X[await catch removeBookFromShelf]\n",err); return -1})
+        return result
+    } catch(exception){
+        console.log("X[removeBookFromShelf]\n")
+        res.sendStatus(424)
+        return -1
+    }
+}
+
+const deleteReview = async (res, userid, bookid)=>{
+    try{
+       result = await ReviewModel.findOneAndDelete({
+            userId: mongoose.Types.ObjectId(userid),
+            bookId: mongoose.Types.ObjectId(bookid)
+        })
+        .then((doc)=>{return doc})
+        .catch((err)=>{res.sendStatus(424); console.log("X[await catch deleteReview]\n"); return -1})
+        return result
+    }catch(exception){
+        res.sendStatus(503)
+        return -1
+
+    }
+}
+
+const getBookInfoToDelete = async(res, reviewId)=>{
+    try{
+        result = BookModel.findOne({reviews: mongoose.Types.ObjectId(reviewId)})
+        .then((doc)=>{return doc})
+        .catch((err)=>{res.sendStatus(424); console.log("X[await catch getBookInfoToDelete]\n"); return -1})
+        return result
+    }catch(exception){
+        res.sendStatus(503)
+        return -1
+    }
+}
+
+const updateBookInfo = async(res, bookAvgRate, ratingCount, userRate)=>{
+    try{
+        result = BookModel.findOneAndUpdate({ reviews: mongoose.Types.ObjectId(reviewId) },
+        {
+            $pull: { reviews: mongoose.Types.ObjectId(reviewId) },
+            $set:{
+                avgRating: calculatedHelper.deleteRateFromBook(bookAvgRate, ratingCount, parseInt(userRate)),
+            },
+            $inc: { ratingCount: ratingCount>0?-1:0},
+        })
+        .then((doc)=>{return doc})
+        .catch((err)=>{res.sendStatus(424); console.log("X[await catch updatebookInfo]\n"); return -1})
+        return result
+    }catch(exception){
+        console.log("X[updatebookInfo]\n",exception);
+        res.sendStatus(503)
+        return -1
+    }
+}
+
+userRouter.delete("/remove_book", jwtHelpers.verifyAccessToken,async(req, res)=>{
+    const reqUsername = req.body.username;
+    const bookId = req.body.bookId;
+    const userRate = req.body.userRate;
+    const bookAvgRate = req.body.avgRate;
+    userDoc= await removeBookFromShelf(res, reqUsername, bookId)
+
+
+    if(userDoc != -1){
+        console.log("======================= 1 ============================")
+        console.log(userDoc)
+        deleteReviewDoc = await deleteReview(res, userDoc._id, bookId)
+        if(deleteReviewDoc != -1){
+            console.log("====================== 2 =============================")
+            console.log(deleteReviewDoc)
+            getBookInfoToDeleteDoc = await getBookInfoToDelete(res, deleteReviewDoc._id)
+            if(getBookInfoToDeleteDoc != -1){
+                console.log("===================== 3 ==============================")
+                console.log(getBookInfoToDeleteDoc)
+                updateBookInfDoc = await updateBookInfo(res, deleteReviewDoc._id, bookAvgRate, getBookInfoToDeleteDoc.ractingCount, userRate)
+            }
+        }
+    }
+})
+
+
+userRouter.delete("/remove_book_old", async (req, res) => {
     const reqUsername = req.body.username;
     const book = req.body.bookId;
     const userRate = req.body.userRate;
@@ -92,11 +187,16 @@ userRouter.delete("/remove_book", async (req, res) => {
                 bookId: mongoose.Types.ObjectId(book)
             },).then((reviewDocs)=>{
                 console.log("review:", reviewDocs)
-                BookModel.findOne({reviews: mongoose.Types.ObjectId(reviewDocs._id)}).then((reviewDoc)=>{
+                BookModel.findOne(
+                    {
+                        reviews: mongoose.Types.ObjectId(reviewDocs._id)
+                    }
+                    ).then((reviewDoc)=>{
                     console.log("book:", reviewDoc)
                     console.log("book Id:", reviewDoc._id)
                     console.log("Rating count:", reviewDoc.ratingCount)
-                    BookModel.findOneAndUpdate({ reviews: mongoose.Types.ObjectId(reviewDocs._id) },
+                    BookModel.findOneAndUpdate(
+                        { reviews: mongoose.Types.ObjectId(reviewDocs._id) },
                         {
                             $pull: { reviews: mongoose.Types.ObjectId(reviewDocs._id) },
                             $set:{
@@ -137,8 +237,10 @@ userRouter.delete("/remove_book", async (req, res) => {
     })
 })
 
+
 /* Update Access Token */
 userRouter.post("/refresh", async (req, res) => {
+
 
     const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
@@ -225,24 +327,42 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
 });
 
 
-//when editing in rating or shelve in user home
+
 userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {
     const userId = req.userId;
     const bookId = req.params.bookId;
     const bookshelf = req.body.bookshelf;
-    const rate = req.body.rate;
-    const status = req.body.status;
+    const rate = req.body.bookshelf.rate;
+    const status = req.body.bookshelf.status;
+
+    const newStatus = req.body.newStatus;
+    const bookAvg = req.body.bookAvg;
+    const newRate= req.body.newRate;
+
     try{
-        await UserModel.findOneAndUpdate({_id:userId,'bookshelf.bookId':bookId},{
-          ...(bookshelf.rate ? { "bookshelf.$.rate": bookshelf.rate }: {}),
-          ...(bookshelf.status ? { "bookshelf.$.status": bookshelf.status }: {})
-        }).then((data)=>{
-            console.log(data)
+        await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},
+        {
+            ...(bookshelf.rate ? { "bookshelf.$.rate": newRate }: {}),
+            ...(bookshelf.status ? { "bookshelf.$.status": newStatus}: {})
+
+        }).then( (userDoc)=>{
+                BookModel.findOne(
+                    {_id :mongoose.Types.ObjectId(bookId)}
+                ).then((bookDoc)=>{
+                const oldRate = bookDoc.avgRating;
+                const ratingCount = bookDoc.ratingCount;
+                console.log(bookDoc)
+                BookModel.findOneAndUpdate({_id :mongoose.Types.ObjectId(bookId)},{
+                    $set:{
+                        avgRating : calculatedHelper.editBookRate(bookAvg,ratingCount,rate,newRate)
+                    }
+                }).then((data)=>{
+                    res.sendStatus(200)
+                })
+            })
         })
-    }catch(e){
-        console.log(e.message)
-    }
-
+    }catch(e){ 
+        res.sendStatus(503).sendStatus(e.message)
+    } 
 })
-
 module.exports = userRouter;

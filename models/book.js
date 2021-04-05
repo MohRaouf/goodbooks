@@ -6,6 +6,7 @@ const BookSchema = new mongoose.Schema({
     description: { type: String, required: true },
     reviews: [{ type: mongoose.Schema.Types.ObjectId, ref: 'review' }],
     authorId: { type: mongoose.Schema.Types.ObjectId, ref: 'author', require: true },
+
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: 'category', require: true },
     avgRating: { type: Number, default: 0 }, //calculated
     ratingCount: { type: Number, default: 0 }, //calculated
@@ -14,6 +15,7 @@ const BookSchema = new mongoose.Schema({
 BookSchema.statics.getTopBooks=function (rate){
     return this.find({"$expr": {"$gte": [{$size: "$reviews"}, 20]}},{ "avgRating" : {$gt :parseInt(rate)}},);
   }
+
 
 BookSchema.post('save', async function(doc) {
     console.log('In Book Save Middleware')
