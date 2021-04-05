@@ -56,6 +56,7 @@ addRateToBook = function(bookRate, NUsers, userStars){
 
 }
 
+
 editBookRate = function(bookRate, NUsers, userOldRate, userNewRate){
     sub = deleteRateFromBook(bookRate, NUsers, userOldRate)
     newAvg = addRateToBook(sub, NUsers, userNewRate)
