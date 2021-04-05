@@ -5,7 +5,7 @@ const jwtHelpers = require('../helpers/jwt_helper')
 const userRouter = express.Router();
 
 /* Sign up New User */
-userRouter.post("/signup", async(req, res) => {
+userRouter.post("/signup", async (req, res) => {
 
     const userInstance = new UserModel({
         username: req.body.username,
@@ -31,7 +31,7 @@ userRouter.post("/signup", async(req, res) => {
 })
 
 /* Login --> Send Access Token + Refresh Token */
-userRouter.post("/login", async(req, res) => {
+userRouter.post("/login", async (req, res) => {
     const reqUsername = req.body.username;
     const reqPassword = req.body.password;
 
@@ -42,19 +42,21 @@ userRouter.post("/login", async(req, res) => {
             return res.sendStatus(503)
         })
 
-    //Username Found
+    //User Found
     if (userInstance) {
+        if (await userInstance.isValidPassword(reqPassword)) {
 
-        if (userInstance.isValidPassword(reqPassword)) {
+            const userId = { userId: userInstance.id }
+            const accessToken = jwtHelpers.generateAcessToken(userId)
+            const refreshToken = jwtHelpers.generateRefreshToken(userId)
 
-            const username = { username: reqUsername }
-            const accessToken = jwtHelpers.generateAcessToken(username)
-            const refreshToken = jwtHelpers.generateRefreshToken(username)
-
-            if (userInstance.setRefreshToken(refreshToken)) {
-                console.log(`${reqUsername} Logged in Successfully !`)
-                return res.json({ accessToken: accessToken, refreshToken: refreshToken })
-            } else return res.sendStatus(500)
+            UserModel.updateOne({ _id: userInstance.id }, { refreshToken: refreshToken }).then((result) => {
+                if (result) return res.json({ accessToken: accessToken, refreshToken: refreshToken })
+                else return res.sendStatus(500)
+            }).catch((err) => {
+                console.log(err)
+                return res.sendStatus(500)
+            })
 
         } else {
             console.log('Invalid Username Or Password')
@@ -67,22 +69,18 @@ userRouter.post("/login", async(req, res) => {
 })
 
 /* Update Access Token */
-userRouter.get("/login", async(req, res) => {
+userRouter.get("/login", async (req, res) => {
 
     const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
-    console.log(`${refreshToken}`)
+    console.log(`Body Refresh Token : ${refreshToken}`)
 
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, user) => {
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
+        if (err) return res.sendStatus(403)
+        const userId = userInfo.userId;
+        console.log(`Extracted UserId from RefreshToken ==> ${userId}`)
 
-        if (err) {
-            console.error(err)
-            return res.sendStatus(403)
-        }
-        const username = user.username;
-        console.log(`Extracted Username from RefreshToken ==> ${username}`)
-
-        const userInstance = await UserModel.findOne({ username: username })
+        const userInstance = await UserModel.findById(userId)
             .catch((err) => {
                 console.error(err);
                 return res.sendStatus(503)
@@ -92,29 +90,30 @@ userRouter.get("/login", async(req, res) => {
             console.error('User not found')
             return res.status(404).send(`User Doesn't Exist`)
         }
+        console.log(`User Refresh Token : ${userInstance.refreshToken}`)
         if (userInstance.refreshToken != null && userInstance.refreshToken === refreshToken) {
-            const newAccessToken = jwtHelpers.generateAcessToken({ username: username })
+            const newAccessToken = jwtHelpers.generateAcessToken({ userId: userId})
             console.log('Access Token Updated')
             return res.json({ accessToken: newAccessToken })
         }
 
         console.error('User Refresh Token Is not Set')
-        return res.status(401).send(`${username} Refresh Token Is not Set`)
+        return res.status(401).send(`User Refresh Token Is not Set`)
     })
 })
 
 /* Logout --> Delete User Refresh Token From DB */
-userRouter.post("/logout", async(req, res) => {
+userRouter.post("/logout", async (req, res) => {
 
     const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async(err, user) => {
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
 
         if (err) return res.sendStatus(403)
-        const username = user.username;
-        console.log(`Extracted Username from RefreshToken ==> ${username}`)
+        const userId = userInfo.userId;
+        console.log(`Extracted userId from RefreshToken ==> ${userId}`)
 
-        const userInstance = await UserModel.updateOne({ username: username }, { refreshToken: null }, { new: true })
+        const userInstance = await UserModel.updateOne({ _id: userId }, { refreshToken: null }, { new: true })
             .catch((err) => {
                 console.error(err);
                 return res.sendStatus(503)
@@ -124,7 +123,7 @@ userRouter.post("/logout", async(req, res) => {
             return res.sendStatus(401)
         }
         console.log(`${userInstance}`)
-        console.log(`${username} Logged out - Refresh Token Reset`)
+        console.log(`User Logged out - Refresh Token Reset`)
         return res.sendStatus(200)
     })
 
@@ -148,31 +147,13 @@ userRouter.get("/", /*authenticateToken,*/ (req, res) => {
       } else {
         res.send(result[0].bookshelf[0].slice(Page*3,Page*3+3));
       }
-    })
-      console.log(user)
-   //res.send(user)
-      /*    UserModel.find({ _id: "605b842658f4847d61fbd347"}, ((err, doc)=>{
-              if(err) console.log(err)
-              console.log(doc)
-              res.send(doc)
-          }))*/
-  /*        .exec((err,result)=>{
-          if(err) console.log(err)
-         else 
-         res.send(result)*/
-        /* var bookshelf = result[0].bookshelf.filter(function(book) {
-         var Status =(req.query.status)?req.query.status:book.status
-              return book.status == Status
-            });
-            res.send(bookshelf.slice(req.query.pg*10,req.query.pg*10+9))*/
-    // })
-          
-         }
-        );
+      })
+      console.log(user)          
+      });
   
 
 //when editing in rating or shelve in user home
-userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async(req, res) => {
+userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {
     const username = req.user;
 
 
