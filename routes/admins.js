@@ -65,7 +65,7 @@ adminRouter.post("/login", async (req, res) => {
 
         } else {
             console.log('Invalid Username Or Password')
-            return res.sendStatus(403)
+            return res.sendStatus(401)
         }
     } else {
         console.log('Admin Data NotFound')
@@ -74,25 +74,25 @@ adminRouter.post("/login", async (req, res) => {
 });
 
 //Update and Send New Access Token by Refresh Token
-adminRouter.get("/login", async (req, res) => {
+adminRouter.post("/refresh", async (req, res) => {
 
     const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
 
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
-        if (err) return res.sendStatus(403)
+        if (err) return res.sendStatus(401)
         const userId = userInfo.userId;
         console.log(`Extracted adminId from RefreshToken ==> ${userId}`)
 
         const adminInstance = await AdminModel.findById(userId)
             .catch((err) => {
                 console.error(err);
-                return res.sendStatus(503)
+                return res.sendStatus(500)
             })
 
         if (!adminInstance) {
             console.error('Admin Refresh Token Is not found')
-            return res.status(404).send(`Admin Doesn't Exist`)
+            return res.status(401).send(`Admin Doesn't Exist`)
         }
         console.log(`Admin Refresh Token : ${adminInstance.refreshToken}`)
         if (adminInstance.refreshToken != null && adminInstance.refreshToken === refreshToken) {

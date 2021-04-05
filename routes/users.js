@@ -138,7 +138,7 @@ userRouter.delete("/remove_book", async (req, res) => {
 })
 
 /* Update Access Token */
-userRouter.get("/login", async (req, res) => {
+userRouter.post("/refresh", async (req, res) => {
 
     const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
@@ -227,14 +227,13 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
 
 //when editing in rating or shelve in user home
 userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {
-    const username = req.user;
-    const username = req.body.username;
+    const userId = req.userId;
     const bookId = req.params.bookId;
     const bookshelf = req.body.bookshelf;
     const rate = req.body.rate;
     const status = req.body.status;
     try{
-        await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},{
+        await UserModel.findOneAndUpdate({_id:userId,'bookshelf.bookId':bookId},{
           ...(bookshelf.rate ? { "bookshelf.$.rate": bookshelf.rate }: {}),
           ...(bookshelf.status ? { "bookshelf.$.status": bookshelf.status }: {})
         }).then((data)=>{
