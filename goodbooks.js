@@ -1,3 +1,5 @@
+var cors = require('cors')
+
 require('dotenv').config()
 require("./boot/dbConnecion");
 const { json, urlencoded } = require('express');
@@ -12,6 +14,9 @@ const bookRouter = require('./routes/books')
 
 const PORT = process.env.PORT || 3000
 const app = express()
+
+app.use(cors()) // Use this after the variable declaration
+
 app.use(json())
 app.use(urlencoded({ extended: true }))
 

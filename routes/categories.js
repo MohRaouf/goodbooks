@@ -4,7 +4,7 @@ const jwtHelpers = require('../helpers/jwt_helper')
 const CategoryModel = require('../models/category')
 
 /* Get All Categories no need for Authentication */
-categoryRouter.get("/", async(req, res) => {
+categoryRouter.get("/", async (req, res) => {
     const allCategories = await CategoryModel.find()
         .catch((err) => {
             console.error(err)
@@ -32,7 +32,7 @@ categoryRouter.get('/:categoryid', async(req, res, next) => {
     })
     
 /* Insert new Categories need Authentication */
-categoryRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
+categoryRouter.post("/", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
     const categoryInfo = {
         name: req.body.name
     }
@@ -46,7 +46,7 @@ categoryRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(
 })
 
 /* Update Categories with ID need Authentication */
-categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
+categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
 
     const id = req.params.category_id;
     console.log(`Updating Category ID : ${id}`)
@@ -60,10 +60,10 @@ categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken,jwtHelpers.is
     }
     console.log(`Updated Info : ${newCategoryInfo}`)
     const updatedDoc = await CategoryModel.findByIdAndUpdate({ _id: id }, newCategoryInfo, { new: true, useFindAndModify: false }).
-    catch((err) => {
-        console.error("====Error===>", err)
-        return res.status(400).send("Bad Request")
-    })
+        catch((err) => {
+            console.error("====Error===>", err)
+            return res.status(400).send("Bad Request")
+        })
     if (updatedDoc) {
         console.log(`Updated Info : ${updatedDoc}`)
         return res.status(202).send("Accepted")
@@ -74,7 +74,7 @@ categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken,jwtHelpers.is
 })
 
 /* Delete Categories with ID need Authentication */
-categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req, res) => {
+categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
 
     const id = req.params.category_id;
     const docToDelete = await CategoryModel.deleteOne({ _id: id }, { new: true, useFindAndModify: false })
@@ -90,5 +90,5 @@ categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken,jwtHelpers.i
     return res.status(404).send("Book not found")
 
 })
-  
+
 module.exports = categoryRouter
