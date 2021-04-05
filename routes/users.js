@@ -1,3 +1,5 @@
+
+const deleteRate = require('../helpers/calculated_helper');
 const express = require("express");
 const userRouter = express.Router();
 const UserModel = require("../models/user");
@@ -16,10 +18,12 @@ userRouter.post("/signup", async (req, res) => {
         username: req.body.username,
         fname: req.body.fname,
         lname: req.body.lname,
+
         password: req.body.password,
         dob: req.body.dob,
         email: req.body.email,
         gender: req.body.gender,
+        bookshelf:req.body.bookshelf,
         ...(req.body.photo ? { photo: req.body.photo } : {})
     })
     console.log(userInstance)
@@ -138,7 +142,7 @@ const updateBookInfo = async(res, bookAvgRate, ratingCount, userRate)=>{
     }
 }
 
-userRouter.delete("/remove_book", async(req, res)=>{
+userRouter.delete("/remove_book", jwtHelpers.verifyAccessToken,async(req, res)=>{
     const reqUsername = req.body.username;
     const bookId = req.body.bookId;
     const userRate = req.body.userRate;
@@ -233,8 +237,10 @@ userRouter.delete("/remove_book_old", async (req, res) => {
     })
 })
 
+
 /* Update Access Token */
 userRouter.get("/login", async (req, res) => {
+
 
     const refreshToken = req.body.refreshToken;
     if (refreshToken == null) return res.sendStatus(401);
@@ -322,23 +328,44 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
 
 
 //when editing in rating or shelve in user home
-userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {
+userRouter.patch("/:bookId", jwtHelpers.verifyAccessToken, async (req,res)=>{
+
     const username = req.body.username;
     const bookId = req.params.bookId;
     const bookshelf = req.body.bookshelf;
-    const rate = req.body.rate;
-    const status = req.body.status;
+    const rate = req.body.bookshelf.rate;
+    const status = req.body.bookshelf.status;
+
+    const newStatus = req.body.newStatus;
+    const bookAvg = req.body.bookAvg;
+    const newRate= req.body.newRate;
+
     try{
-        await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},{
-          ...(bookshelf.rate ? { "bookshelf.$.rate": bookshelf.rate }: {}),
-          ...(bookshelf.status ? { "bookshelf.$.status": bookshelf.status }: {})
-        }).then((data)=>{
-            console.log(data)
+        await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},
+        {
+            ...(bookshelf.rate ? { "bookshelf.$.rate": newRate }: {}),
+            ...(bookshelf.status ? { "bookshelf.$.status": newStatus}: {})
+
+        }).then( (userDoc)=>{
+                BookModel.findOne(
+                    {_id :mongoose.Types.ObjectId(bookId)}
+                ).then((bookDoc)=>{
+                const oldRate = bookDoc.avgRating;
+                const ratingCount = bookDoc.ratingCount;
+                console.log(bookDoc)
+                BookModel.findOneAndUpdate({_id :mongoose.Types.ObjectId(bookId)},{
+                    $set:{
+                        avgRating : calculatedHelper.editBookRate(bookAvg,ratingCount,rate,newRate)
+                    }
+                }).then((data)=>{
+                    res.sendStatus(200)
+                })
+            })
         })
-    }catch(e){
-        console.log(e.message)
+    }catch(e){ 
+        res.sendStatus(503).sendStatus(e.message)
     }
 
+   
 })
-
 module.exports = userRouter;
