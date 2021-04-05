@@ -1,17 +1,31 @@
-// Requiring Mongoose for communicate with mongodb data
 const mongoose = require('mongoose')
-//creating author schema 
-const authorSchema = new mongoose.Schema({
 
-    fname : { type : String, minimumLength : 3, required : true },
-    name : { type : String, minimumLength : 3, required : true },
-    photo : { data : Buffer,  contentType : String },
-    dob   : { type : Date, required : true },
-    gender: { type : String , enum : ["Male","Female"], required : true },
-    books : [{type: mongoose.Schema.Types.ObjectId, ref: 'book'}],
+const UNKNOWN_AUTHOR_ID = "605a7532a7e0791351374d8c"
+const BookModel = require('./book')
+
+const AuthorSchema = new mongoose.Schema({
+
+    fname: { type: String, minimumLength: 2, required: true },
+    lname: { type: String, minimumLength: 2 },
+    photo: { data: Buffer, contentType: String },
+    dob: { type: Date },
+    gender: { type: String, enum: ["m", "f"] },
+    books: [{ type: mongoose.Schema.Types.ObjectId, ref: 'book' }],
 })
+AuthorSchema.index({ fname: 1, lname: 1 }, { unique: true });
 
-//creating author model
-const AuthorModel = mongoose.model('author', authorSchema)
+AuthorSchema.pre('deleteOne', { document: false, query: true }, async function(next) {
+    console.log('==================> In Author pre middle ware')
+    const delAuthorId = this.getFilter()["_id"];
+    console.log('delAuthorId', delAuthorId)
+    await BookModel.updateOne({ authorId: delAuthorId }, { authorId: UNKNOWN_AUTHOR_ID })
+        .catch((err) => next(err)).then(next())
+});
+
+//static function to get popular authors
+AuthorSchema.statics.getTopAuthors=function(num){
+    return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+ }
 //exports author model 
+const AuthorModel = mongoose.model('author', AuthorSchema)
 module.exports = AuthorModel

@@ -1,3 +1,6 @@
 node_modules
 *.rest
 *.txt
+my_*
+Collections.txt
+references.txt
