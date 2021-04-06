@@ -121,7 +121,7 @@ const getBookInfoToDelete = async(res, reviewId)=>{
     }
 }
 
-const updateBookInfo = async(res, bookAvgRate, ratingCount, userRate)=>{
+const updateBookInfo = async(res, reviewId, bookAvgRate, ratingCount, userRate)=>{
     try{
         result = BookModel.findOneAndUpdate({ reviews: mongoose.Types.ObjectId(reviewId) },
         {
@@ -160,7 +160,7 @@ userRouter.delete("/test_remove", async(req, res)=>{
             if(getBookInfoToDeleteDoc != -1){
                 console.log("===================== 3 ==============================")
                 console.log(getBookInfoToDeleteDoc)
-                updateBookInfDoc = await updateBookInfo(res, deleteReviewDoc._id, bookAvgRate, getBookInfoToDeleteDoc.ractingCount, userRate)
+                updateBookInfDoc = await updateBookInfo(res, deleteReviewDoc._id, bookAvgRate, getBookInfoToDeleteDoc.ratingCount, userRate)
             }
         }
     }
