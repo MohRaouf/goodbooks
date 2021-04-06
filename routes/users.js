@@ -84,10 +84,10 @@ const removeBookFromShelf = async (res, userName, bookid)=>{
                     $pull: { bookshelf: { bookId: bookid } },
                 })
                 .then((doc)=>{return doc})
-                .catch((err)=>{res.sendStatus(424); console.log("X[await catch removeBookFromShelf]\n",err); return -1})
+                .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch removeBookFromShelf\]:\n====================\n",err); return -1})
         return result
     } catch(exception){
-        console.log("X[removeBookFromShelf]\n")
+        console.log("[X] [removeBookFromShelf\]:\n====================\n")
         res.sendStatus(424)
         return -1
     }
@@ -100,7 +100,7 @@ const deleteReview = async (res, userid, bookid)=>{
             bookId: mongoose.Types.ObjectId(bookid)
         })
         .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch deleteReview]\n"); return -1})
+        .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch deleteReview\]:\n====================\n"); return -1})
         return result
     }catch(exception){
         res.sendStatus(503)
@@ -113,7 +113,7 @@ const getBookInfoToDelete = async(res, reviewId)=>{
     try{
         result = BookModel.findOne({reviews: mongoose.Types.ObjectId(reviewId)})
         .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch getBookInfoToDelete]\n"); return -1})
+        .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch getBookInfoToDelete\]:\n====================\n"); return -1})
         return result
     }catch(exception){
         res.sendStatus(503)
@@ -132,10 +132,10 @@ const updateBookInfo = async(res, bookAvgRate, ratingCount, userRate)=>{
             $inc: { ratingCount: ratingCount>0?-1:0},
         })
         .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch updatebookInfo]\n"); return -1})
+        .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch updatebookInfo\]:\n====================\n", err); return -1})
         return result
     }catch(exception){
-        console.log("X[updatebookInfo]\n",exception);
+        console.log("[X] [updatebookInfo\]:\n====================\n",exception);
         res.sendStatus(503)
         return -1
     }
