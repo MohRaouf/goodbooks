@@ -17,33 +17,20 @@ categoryRouter.get("/", async (req, res) => {
 /* get popular categories */
 // >>> without querystring
 categoryRouter.get('/top', async (req, res) => {
-    try {
-        const topCategories = await CategoryModel.getTopCategories(req.query.size);
-        // console.log(topCategories);
-        res.json(topCategories);
-    }
-    catch (e) {
-        console.log(e.message)
-    }
+    const topCategories=await CategoryModel.getTopCategories(4)
+    .catch((err)=>{return res.status(500).send("Internal Server Error")})
+    if(topCategories){return res.json(topCategories)}
+    else {return res.status(404).send("Not Found")}
 })
-
 /* Get Categories by ID no need for Authentication */
-categoryRouter.get("/:category_id", async (req, res) => {
-    const id = req.params.category_id;
-    console.log(id)
-    const catrgory = await CategoryModel.findById(id).populate('book').exec()
-        .catch((err) => {
-            console.log(err)
-            return res.status(500).send('Internal server error')
-        })
-    if (catrgory) {
-        console.log(catrgory)
-        return res.json(catrgory);
-    }
-    console.log('Not Found')
-    return res.status(404).send("Not Found")
-})
-
+categoryRouter.get('/:categoryid', async(req, res, next) => {
+        const Id = req.params.categoryid;
+        const category = await CategoryModel.find({_id:Id}).populate('books', 'name').populate('authors', 'fname')
+        .catch((err)=>{return res.status(500).send("Internal Server Error")})
+        if(category){return res.json(category)}
+        else {return res.status(404).send("Not Found")}
+    })
+    
 /* Insert new Categories need Authentication */
 categoryRouter.post("/", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
     const categoryInfo = {
