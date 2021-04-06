@@ -161,6 +161,8 @@ userRouter.delete("/test_remove", async(req, res)=>{
                 console.log("===================== 3 ==============================")
                 console.log(getBookInfoToDeleteDoc)
                 updateBookInfDoc = await updateBookInfo(res, deleteReviewDoc._id, bookAvgRate, getBookInfoToDeleteDoc.ratingCount, userRate)
+                if(updateBookInfDoc != -1)
+                    res.sendStatus(200)
             }
         }
     }
