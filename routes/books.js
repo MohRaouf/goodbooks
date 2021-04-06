@@ -14,7 +14,9 @@ bookRouter.get('/top', async(req, res) => {
 
 /* Get All Books no need for Authentication */
 bookRouter.get("/", async(req, res) => {
-    const allBooks = await BookModel.find()
+    const allBooks = await BookModel.find().select("_id name description authorId categoryId photo")
+    .populate({ path: 'authorId', select: '_id fname lname' })
+    .populate({ path: 'categoryId', select: '_id   name' })
         .catch((err) => {
             console.error(err)
             return res.status(400).send("Bad Request")
@@ -49,6 +51,7 @@ bookRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req,
         authorId: req.body.authorId,
         categoryId: req.body.categoryId
     }
+    console.log(bookInfo)
     await BookModel.create(bookInfo).catch(err => {
         console.error(err);
         return res.status(500).send("Failed To Add New Book")
