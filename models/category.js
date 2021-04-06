@@ -1,7 +1,7 @@
 const mongoose = require('mongoose')
 const BookModel = require('./book')
 
-const UNKOWN_CATEGORY_ID = "605a7694b4114213c53d8711"
+const UNKOWN_CATEGORY_ID = "606c0f1c4ec9b9134cb14df8"
 
 const CategorySchema = new mongoose.Schema({
     name: { type: String, required: true },

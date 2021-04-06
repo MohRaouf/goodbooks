@@ -5,16 +5,11 @@ const { populate } = require('../models/author')
 const BookModel = require('../models/book')
 const AuthorModel = require('../models/author')
 
-bookRouter.get('/top', async(req, res) => { 
-    try{
-        const topBooks= await BookModel.getTopBooks(req.query.size);
-        res.json(topBooks);}
-    catch(e){console.log(e.message);}
-})    
-
 /* Get All Books no need for Authentication */
 bookRouter.get("/", async(req, res) => {
-    const allBooks = await BookModel.find()
+    const allBooks = await BookModel.find().select("_id name description authorId categoryId photo")
+    .populate({ path: 'authorId', select: '_id fname lname' })
+    .populate({ path: 'categoryId', select: '_id   name' })
         .catch((err) => {
             console.error(err)
             return res.status(400).send("Bad Request")
@@ -22,6 +17,15 @@ bookRouter.get("/", async(req, res) => {
     console.log("All Books : ", allBooks)
     return res.json(allBooks);
 })
+
+bookRouter.get('/top', async(req, res) => { 
+        // const topBooks= await BookModel.getTopBooks(req.query.size)
+        const topBooks= await BookModel.getTopBooks(4)
+        .catch((err)=>{return res.status(500).send("Internal Server Error")})
+        if(topBooks){return res.json(topBooks);}
+        else {return res.status(404).send("Not Found")}
+})    
+
 
 /* Get Book by ID no need for Authentication */
 bookRouter.get("/:book_id", async(req, res) => {
@@ -49,6 +53,7 @@ bookRouter.post("/", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async(req,
         authorId: req.body.authorId,
         categoryId: req.body.categoryId
     }
+    console.log(bookInfo)
     await BookModel.create(bookInfo).catch(err => {
         console.error(err);
         return res.status(500).send("Failed To Add New Book")

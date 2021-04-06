@@ -12,16 +12,18 @@ authorRouter.get("/", async(req, res) => {
         })
     console.log("All Authors : ", allAuthors)
     return res.json(allAuthors);
-
-
 })
 //when request to get popular author
 // >>> with query
-authorRouter.get("/top",async (request,response)=>{
-    try{
-        const topAuthors=await AuthorModel.getTopAuthors(request.query.size);
-        response.json(topAuthors);}
-    catch(e){console.log(e.message);}
+authorRouter.get("/top",async (req,res)=>{
+        // const topAuthors=await AuthorModel.getTopAuthors(request.query.size);
+        const topAuthors=await AuthorModel.getTopAuthors(1)
+        .catch((err)=>{
+            console.log(err);
+            return res.status(500).send("Internal Server Error")
+        })
+        if(topAuthors){return res.json(topAuthors)}
+        else {return res.status(404).send("Not Found")}
 })
 
 /* Get Author by ID no need for Authentication */

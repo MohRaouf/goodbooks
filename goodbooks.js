@@ -17,8 +17,8 @@ const app = express()
 
 app.use(cors()) // Use this after the variable declaration
 
-app.use(json())
-app.use(urlencoded({ extended: true }))
+app.use(express.json({limit: '50mb'}));
+app.use(express.urlencoded({limit: '50mb'}));
 
 /*  Routes */
 app.use('/categories', categoryRouter);

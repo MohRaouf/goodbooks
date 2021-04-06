@@ -1,13 +1,13 @@
 const mongoose = require('mongoose')
 
-const UNKNOWN_AUTHOR_ID = "605a7532a7e0791351374d8c"
+const UNKNOWN_AUTHOR_ID = "606c0efd4ec9b9134cb14df7"
 const BookModel = require('./book')
 
 const AuthorSchema = new mongoose.Schema({
 
     fname: { type: String, minimumLength: 2, required: true },
     lname: { type: String, minimumLength: 2 },
-    photo: { data: Buffer, contentType: String },
+    photo: { data: String },
     dob: { type: Date },
     gender: { type: String, enum: ["m", "f"] },
     books: [{ type: mongoose.Schema.Types.ObjectId, ref: 'book' }],
