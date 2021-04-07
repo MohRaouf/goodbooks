@@ -125,7 +125,7 @@ adminRouter.post('/logout', async (req, res) => {
             console.error('Admin Refresh Token Is not found')
             return res.sendStatus(401)
         }
-        console.log(`${adminInstance}`)
+        // console.log(`${adminInstance}`)
         console.log(`Admin ID : ${userId} Logged out - Refresh Token Reset`)
         return res.sendStatus(200)
     })
