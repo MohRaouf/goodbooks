@@ -6,8 +6,8 @@ const BookModel = require('./book')
 const AuthorSchema = new mongoose.Schema({
 
     fname: { type: String, minimumLength: 2, required: true },
-    lname: { type: String, minimumLength: 2 },
-    photo: { data: String },
+    lname: { type: String, minimumLength: 2, default:""},
+    photo: { type: String },
     dob: { type: Date },
     gender: { type: String, enum: ["m", "f"] },
     books: [{ type: mongoose.Schema.Types.ObjectId, ref: 'book' }],
