@@ -85,10 +85,10 @@ const removeBookFromShelf = async (res, userName, bookid)=>{
                     $pull: { bookshelf: { bookId: bookid } },
                 })
                 .then((doc)=>{return doc})
-                .catch((err)=>{res.sendStatus(424); console.log("X[await catch removeBookFromShelf]\n",err); return -1})
+                .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch removeBookFromShelf\]:\n====================\n",err); return -1})
         return result
     } catch(exception){
-        console.log("X[removeBookFromShelf]\n")
+        console.log("[X] [removeBookFromShelf\]:\n====================\n")
         res.sendStatus(424)
         return -1
     }
@@ -101,7 +101,7 @@ const deleteReview = async (res, userid, bookid)=>{
             bookId: mongoose.Types.ObjectId(bookid)
         })
         .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch deleteReview]\n"); return -1})
+        .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch deleteReview\]:\n====================\n"); return -1})
         return result
     }catch(exception){
         res.sendStatus(503)
@@ -114,7 +114,7 @@ const getBookInfoToDelete = async(res, reviewId)=>{
     try{
         result = BookModel.findOne({reviews: mongoose.Types.ObjectId(reviewId)})
         .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch getBookInfoToDelete]\n"); return -1})
+        .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch getBookInfoToDelete\]:\n====================\n"); return -1})
         return result
     }catch(exception){
         res.sendStatus(503)
@@ -122,7 +122,7 @@ const getBookInfoToDelete = async(res, reviewId)=>{
     }
 }
 
-const updateBookInfo = async(res, bookAvgRate, ratingCount, userRate)=>{
+const updateBookInfo = async(res, reviewId, bookAvgRate, ratingCount, userRate)=>{
     try{
         result = BookModel.findOneAndUpdate({ reviews: mongoose.Types.ObjectId(reviewId) },
         {
@@ -133,16 +133,16 @@ const updateBookInfo = async(res, bookAvgRate, ratingCount, userRate)=>{
             $inc: { ratingCount: ratingCount>0?-1:0},
         })
         .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch updatebookInfo]\n"); return -1})
+        .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch updatebookInfo\]:\n====================\n", err); return -1})
         return result
     }catch(exception){
-        console.log("X[updatebookInfo]\n",exception);
+        console.log("[X] [updatebookInfo\]:\n====================\n",exception);
         res.sendStatus(503)
         return -1
     }
 }
 
-userRouter.delete("/remove_book", jwtHelpers.verifyAccessToken,async(req, res)=>{
+userRouter.delete("/remove_book", async(req, res)=>{
     const reqUsername = req.body.username;
     const bookId = req.body.bookId;
     const userRate = req.body.userRate;
@@ -161,11 +161,14 @@ userRouter.delete("/remove_book", jwtHelpers.verifyAccessToken,async(req, res)=>
             if(getBookInfoToDeleteDoc != -1){
                 console.log("===================== 3 ==============================")
                 console.log(getBookInfoToDeleteDoc)
-                updateBookInfDoc = await updateBookInfo(res, deleteReviewDoc._id, bookAvgRate, getBookInfoToDeleteDoc.ractingCount, userRate)
+                updateBookInfDoc = await updateBookInfo(res, deleteReviewDoc._id, bookAvgRate, getBookInfoToDeleteDoc.ratingCount, userRate)
+                if(updateBookInfDoc != -1)
+                    res.sendStatus(200)
             }
         }
     }
 })
+
 
 const addReviewToReviews = async (res, userid, bookid, reviewBody)=>{
     try{
