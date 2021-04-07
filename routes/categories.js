@@ -26,7 +26,7 @@ categoryRouter.get('/top', async (req, res) => {
 categoryRouter.get('/:categoryid', async (req, res, next) => {
     const Id = req.params.categoryid;
     const category = await CategoryModel.find({ _id: Id })
-        .populate({ path: 'books', select: '_id name', populate: { path: 'authorId', select: '_id fname lname' } })
+        .populate({ path: 'books', select: '_id name photo', populate: { path: 'authorId', select: '_id fname lname' } })
         .catch((err) => { return res.status(500).send("Internal Server Error") })
     console.log(category)
     if (category) { return res.json(category) }

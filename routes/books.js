@@ -34,6 +34,7 @@ bookRouter.get("/:book_id", async(req, res) => {
     console.log(id)
     const book = await BookModel.findById(id).populate({ path: 'authorId', select: '_id fname lname' })
         .populate({ path: 'categoryId', select: '_id   name' })
+        .populate({path:'reviews', select:'body',populate:{path:"userId",seclect:'_id fname lname'}})
         .catch((err) => {
             console.log(err)
             return res.status(500).send('Internal server error')
