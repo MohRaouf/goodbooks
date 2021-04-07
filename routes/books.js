@@ -18,8 +18,9 @@ bookRouter.get("/", async(req, res) => {
 
 bookRouter.get('/top', async(req, res) => { 
         // const topBooks= await BookModel.getTopBooks(req.query.size)
-        const topBooks= await BookModel.getTopBooks(4)
+        const topBooks= await BookModel.getTopBooks(2)
         .catch((err)=>{return res.status(500).send("Internal Server Error")})
+        console.log(topBooks)
         if(topBooks){return res.json(topBooks);}
         else {return res.status(404).send("Not Found")}
 })    
