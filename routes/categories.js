@@ -17,20 +17,22 @@ categoryRouter.get("/", async (req, res) => {
 /* get popular categories */
 // >>> without querystring
 categoryRouter.get('/top', async (req, res) => {
-    const topCategories=await CategoryModel.getTopCategories(4)
-    .catch((err)=>{return res.status(500).send("Internal Server Error")})
-    if(topCategories){return res.json(topCategories)}
-    else {return res.status(404).send("Not Found")}
+    const topCategories = await CategoryModel.getTopCategories(4)
+        .catch((err) => { return res.status(500).send("Internal Server Error") })
+    if (topCategories) { return res.json(topCategories) }
+    else { return res.status(404).send("Not Found") }
 })
 /* Get Categories by ID no need for Authentication */
-categoryRouter.get('/:categoryid', async(req, res, next) => {
-        const Id = req.params.categoryid;
-        const category = await CategoryModel.find({_id:Id}).populate('books', 'name').populate('authors', 'fname')
-        .catch((err)=>{return res.status(500).send("Internal Server Error")})
-        if(category){return res.json(category)}
-        else {return res.status(404).send("Not Found")}
-    })
-    
+categoryRouter.get('/:categoryid', async (req, res, next) => {
+    const Id = req.params.categoryid;
+    const category = await CategoryModel.find({ _id: Id })
+        .populate({ path: 'books', select: '_id name', populate: { path: 'authorId', select: '_id fname lname' } })
+        .catch((err) => { return res.status(500).send("Internal Server Error") })
+    console.log(category)
+    if (category) { return res.json(category) }
+    else { return res.status(404).send("Not Found") }
+})
+
 /* Insert new Categories need Authentication */
 categoryRouter.post("/", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
     const categoryInfo = {
@@ -52,11 +54,9 @@ categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken, jwtHelpers.i
     console.log(`Updating Category ID : ${id}`)
 
     const newCategoryInfo = {
-        ...(req.body.fname ? { fname: req.body.fname } : {}),
-        ...(req.body.lname ? { lname: req.body.lname } : {}),
-        ...(req.body.photo ? { photo: req.body.photo } : {}),
-        ...(req.body.dob ? { dob: req.body.dob } : {}),
-        ...(req.body.gender ? { gender: req.body.gender } : {}),
+        name: req.body.name,
+        photo: req.body.photo
+        // ...(req.body.photo ? { photo: req.body.photo } : {}),
     }
     console.log(`Updated Info : ${newCategoryInfo}`)
     const updatedDoc = await CategoryModel.findByIdAndUpdate({ _id: id }, newCategoryInfo, { new: true, useFindAndModify: false }).
