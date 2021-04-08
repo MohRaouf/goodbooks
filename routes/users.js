@@ -142,7 +142,7 @@ const updateBookInfo = async(res, reviewId, bookAvgRate, ratingCount, userRate)=
     }
 }
 
-userRouter.delete("/remove_book", async(req, res)=>{
+userRouter.delete("/remove_book", jwtHelpers.verifyAccessToken, async(req, res)=>{
     const reqUsername = req.body.username;
     const bookId = req.body.bookId;
     const userRate = req.body.userRate;
@@ -205,7 +205,7 @@ const addReviewToBook = async (res, bookid, reviewId)=>{
     }
 }
 
-userRouter.post("/add_review", async (req, res) => {
+userRouter.post("/add_review", jwtHelpers.verifyAccessToken, async (req, res) => {
     const userId = req.body.userId;
     const bookId = req.body.bookId;
     const body =  req.body.body;
