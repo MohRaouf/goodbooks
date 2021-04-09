@@ -221,6 +221,33 @@ userRouter.post("/add_review", jwtHelpers.verifyAccessToken, async (req, res) =>
     }
 })
 
+const addBook = async (res, userId, userBookshelf)=>{
+    try{
+       result = await UserModel.findOneAndUpdate({
+            _id: mongoose.Types.ObjectId(userId),
+        },{
+            $push: { bookshelf: userBookshelf },
+        })
+        .then((doc)=>{return doc})
+        .catch((err)=>{res.sendStatus(424); console.log("[X] [await catch addBook\]:\n====================\n"); return -1})
+        return result
+    }catch(exception){
+        console.log("[X] [await catch addBook\]:\n====================\n",exception);        res.sendStatus(503)
+        res.sendStatus(503)
+        return -1
+    }
+}
+
+userRouter.post("/add_book", async (req, res) => {
+    const reqUserId = req.body.userId;
+    const bookshelf = req.body.bookshelf;
+    const user = await addBook(res, reqUserId, bookshelf)
+    if(user != -1){
+        console.log("======================= 1 ============================")
+        console.log(user)
+        res.sendStatus(200)
+    }
+})
 
 userRouter.delete("/remove_book_old", async (req, res) => {
     const reqUsername = req.body.username;
@@ -351,16 +378,15 @@ userRouter.post("/logout", async (req, res) => {
         console.log(`User Logged out - Refresh Token Reset`)
         return res.sendStatus(200)
     })
-
 })
 
 /* User Book Shelf Info Info */
 //first get user by id then make projection on bookshelf array to filter by status then slice [skip,limit ]for pagination
-userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
-    var Status = req.query.status ? [req.query.status] : ["r", "c", "w"]
+userRouter.get("/", (req, res) => {
+    var Status = req.body.status ? [req.body.status] : ["r", "c", "w"]
     var Page = req.query.pg ? req.query.pg : 0
     const user = UserModel.aggregate(
-        [{ $match: { _id: mongoose.Types.ObjectId(req.userId) } }, {
+        [{ $match: { _id: mongoose.Types.ObjectId(req.body.userId) } }, {
             $project: {
                 bookshelf: [{
                     $filter: {
@@ -374,7 +400,8 @@ userRouter.get("/", jwtHelpers.verifyAccessToken, (req, res) => {
             if (err) {
                 res.send(err);
             } else {
-                res.send(result[0].bookshelf[0].slice(Page * 3, Page * 3 + 3));
+                console.log(result)
+                res.send(result)//[0].bookshelf[0].slice(Page * 3, Page * 3 + 3));
             }
         })
     console.log(user)
