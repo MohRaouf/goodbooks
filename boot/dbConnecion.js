@@ -6,5 +6,5 @@ mongoose.connect(MONGODB_URL, {
     useCreateIndex: true
 }, (err) => {
     if (err) console.error(err)
-    else console.log("Connected To DB")
+    else console.log("Connected To Atlas DB")
 })

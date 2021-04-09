@@ -10,6 +10,7 @@ const BookModel = require("../models/book");
 const jwt = require('jsonwebtoken');
 const jwtHelpers = require('../helpers/jwt_helper')
 const ReviewModel = require("../models/review");
+var cors = require('cors')
 
 /* Sign up New User */
 userRouter.post("/signup", async (req, res) => {
@@ -382,11 +383,12 @@ userRouter.post("/logout", async (req, res) => {
 
 /* User Book Shelf Info Info */
 //first get user by id then make projection on bookshelf array to filter by status then slice [skip,limit ]for pagination
-userRouter.get("/", (req, res) => {
+userRouter.get("/:id", (req, res) => {
+    console.log(req.params.id)
     var Status = req.body.status ? [req.body.status] : ["r", "c", "w"]
     var Page = req.query.pg ? req.query.pg : 0
     const user = UserModel.aggregate(
-        [{ $match: { _id: mongoose.Types.ObjectId(req.body.userId) } }, {
+        [{ $match: { _id: mongoose.Types.ObjectId(req.params.id) } }, {
             $project: {
                 bookshelf: [{
                     $filter: {
@@ -401,7 +403,10 @@ userRouter.get("/", (req, res) => {
                 res.send(err);
             } else {
                 console.log(result)
-                res.send(result)//[0].bookshelf[0].slice(Page * 3, Page * 3 + 3));
+                if(!(result[0].length) > 0)
+                    res.send(result[0].bookshelf[0])//.slice(Page * 3, Page * 3 + 3));
+                else
+                    res.send(result)//.slice(Page * 3, Page * 3 + 3));
             }
         })
     console.log(user)
