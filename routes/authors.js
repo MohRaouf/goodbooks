@@ -30,7 +30,7 @@ authorRouter.get("/top",async (req,res)=>{
 authorRouter.get("/:author_id", async(req, res) => {
     const id = req.params.author_id;
     console.log(id)
-    const author = await AuthorModel.findById(id).populate('book').exec()
+    const author = await AuthorModel.findById(id).populate({ path: 'books', select: '_id name photo'}).exec()
         .catch((err) => {
             console.log(err)
             return res.status(500).send('Internal server error')
