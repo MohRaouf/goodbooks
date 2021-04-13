@@ -20,7 +20,7 @@ bookRouter.get("/", async (req, res) => {
 
 bookRouter.get('/top', async (req, res) => {
     // const topBooks= await BookModel.getTopBooks(req.query.size)
-    const topBooks = await BookModel.getTopBooks(0)
+    const topBooks = await BookModel.getTopBooks(4)
     .then((tops)=>{
         if (tops) { return res.json(tops); }
         else { return res.status(404).send("Not Found") }
@@ -37,6 +37,7 @@ bookRouter.get("/:book_id", async (req, res) => {
     console.log(id)
     const book = await BookModel.findById(id).populate({ path: 'authorId', select: '_id fname lname' })
         .populate({ path: 'categoryId', select: '_id   name' })
+        .populate({path:'reviews', select:'body',populate:{path:"userId",seclect:'_id fname lname'}})
         .catch((err) => {
             console.log(err)
             return res.status(500).send('Internal server error')
