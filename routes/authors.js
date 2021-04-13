@@ -10,7 +10,7 @@ authorRouter.get("/", async(req, res) => {
             console.error(err)
             return res.status(400).send("Bad Request")
         })
-    console.log("All Authors : ", allAuthors)
+    // console.log("All Authors : ", allAuthors)
     return res.json(allAuthors);
 })
 //when request to get popular author
@@ -36,7 +36,7 @@ authorRouter.get("/:author_id", async(req, res) => {
             return res.status(500).send('Internal server error')
         })
     if (author) {
-        console.log(author)
+        // console.log(author)
         return res.json(author);
     }
     console.log('Not Found')
@@ -78,17 +78,17 @@ authorRouter.patch("/:author_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmi
         ...(req.body.dob ? { dob: req.body.dob } : {}),
         ...(req.body.gender ? { gender: req.body.gender } : {}),
     }
-    console.log(`Updated Info : ${newAuthorInfo}`)
+    // console.log(`Updated Info : ${newAuthorInfo}`)
     const updatedDoc = await AuthorModel.findByIdAndUpdate({ _id: id }, newAuthorInfo, { new: true, useFindAndModify: false }).
     catch((err) => {
         console.error("====Error===>", err)
         return res.status(400).send("Bad Request")
     })
     if (updatedDoc) {
-        console.log(`Updated Info : ${updatedDoc}`)
+        // console.log(`Updated Info : ${updatedDoc}`)
         return res.status(202).send("Accepted")
     }
-    console.log(`Updated Info : ${updatedDoc}`)
+    // console.log(`Updated Info : ${updatedDoc}`)
     return res.status(404).send("author not found")
 })
 

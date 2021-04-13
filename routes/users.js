@@ -77,6 +77,27 @@ userRouter.post("/login", async (req, res) => {
     }
 });
 
+/** get the logged in user info */
+userRouter.get("/login",jwtHelpers.verifyAccessToken, async (req, res) => {
+    const userId=req.userId;
+   const userInstance= await UserModel.findById(userId).catch((err)=>{
+        console.error(err)
+        res.sendStatus(401)
+    })
+    if(userInstance==null){
+        console.log("======== User Info Not Found =========")
+        /** Clear the refresh token */
+        await UserModel.updateOne({ _id: userId }, { refreshToken: null }, { new: true })
+        .catch((err) => {
+            console.error(err);
+            return res.sendStatus(401)
+        }).then(()=>{ return res.sendStatus(401)})
+    }
+    console.log("======== User Info Sent =========")
+    return res.json(userInstance)
+});
+
+
 const removeBookFromShelf = async (res, userName, bookid)=>{
     try{
         result = await UserModel.findOneAndUpdate(
@@ -259,7 +280,7 @@ userRouter.post("/refresh", async (req, res) => {
 
         if (!userInstance) {
             console.error('User not found')
-            return res.status(404).send(`User Doesn't Exist`)
+            return res.status(401).send(`User Doesn't Exist`)
         }
         console.log(`User Refresh Token : ${userInstance.refreshToken}`)
         if (userInstance.refreshToken != null && userInstance.refreshToken === refreshToken) {
