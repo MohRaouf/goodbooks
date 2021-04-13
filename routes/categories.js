@@ -10,7 +10,7 @@ categoryRouter.get("/", async (req, res) => {
             console.error(err)
             return res.status(400).send("Bad Request")
         })
-    console.log("All Categories : ", allCategories)
+    // console.log("All Categories : ", allCategories)
     return res.json(allCategories);
 })
 
@@ -18,7 +18,10 @@ categoryRouter.get("/", async (req, res) => {
 // >>> without querystring
 categoryRouter.get('/top', async (req, res) => {
     const topCategories = await CategoryModel.getTopCategories(4)
-        .catch((err) => { return res.status(500).send("Internal Server Error") })
+        .catch((err) => {
+            return res.status(500).send("Internal Server Error")
+            console.error(err)
+        })
     if (topCategories) { return res.json(topCategories) }
     else { return res.status(404).send("Not Found") }
 })
@@ -27,8 +30,11 @@ categoryRouter.get('/:categoryid', async (req, res, next) => {
     const Id = req.params.categoryid;
     const category = await CategoryModel.find({ _id: Id })
         .populate({ path: 'books', select: '_id name', populate: { path: 'authorId', select: '_id fname lname' } })
-        .catch((err) => { return res.status(500).send("Internal Server Error") })
-    console.log(category)
+        .catch((err) => {
+            console.error(err)
+            return res.status(500).send("Internal Server Error")
+        })
+    // console.log(category)
     if (category) { return res.json(category) }
     else { return res.status(404).send("Not Found") }
 })
@@ -36,7 +42,8 @@ categoryRouter.get('/:categoryid', async (req, res, next) => {
 /* Insert new Categories need Authentication */
 categoryRouter.post("/", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
     const categoryInfo = {
-        name: req.body.name
+        name: req.body.name,
+        photo: req.body.photo
     }
     await CategoryModel.create(categoryInfo).catch(err => {
         console.err(err);
@@ -65,10 +72,10 @@ categoryRouter.patch("/:category_id", jwtHelpers.verifyAccessToken, jwtHelpers.i
             return res.status(400).send("Bad Request")
         })
     if (updatedDoc) {
-        console.log(`Updated Info : ${updatedDoc}`)
+        // console.log(`Updated Info : ${updatedDoc}`)
         return res.status(202).send("Accepted")
     }
-    console.log(`Updated Info : ${updatedDoc}`)
+    // console.log(`Updated Info : ${updatedDoc}`)
     return res.status(404).send("category not found")
 
 })
@@ -83,7 +90,7 @@ categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken, jwtHelpers.
             return res.status(500).send("Internal server error")
         })
     if (docToDelete) {
-        console.log(`Category ID : ${id} Deleted`)
+        // console.log(`Category ID : ${id} Deleted`)
         return res.status(200).send("Deleted")
     }
     console.log(`Book Not Found`)

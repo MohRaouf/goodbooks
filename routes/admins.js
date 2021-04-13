@@ -27,13 +27,20 @@ adminRouter.post("/signup", async (req, res) => {
         }
         res.sendStatus(500)
     })
-    .catch((err) => {
-      console.error("====Error===>", err);
-      if (err.code == 11000) {
-        return res.status(409).send("Duplicated Username"); // username duplication - conflict
-      }
-      res.sendStatus(500);
-    });
+});
+
+
+/** get the logged in admin info */
+adminRouter.get("/login",jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, async (req, res) => {
+    const adminId=req.userId;
+    await AdminModel.findById(adminId)
+    .then((adminInfo)=>{
+        console.log("======== Admin Info Sent =========")
+        res.json(adminInfo)
+    }).catch((err)=>{
+        console.error(err)
+        res.sendStatus(401)
+    })
 });
 
 //Login and send Access Token + Refresh Token
