@@ -106,5 +106,15 @@ bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdmin, 
     console.log(`Book Not Found`)
     return res.status(404).send("Book not found")
 })
-
+bookRouter.get("/search/:q",async(req,res)=>{
+   const searchWord=req.params.q;
+   console.log(searchWord)
+  const filterResult = await BookModel.find({name:{$regex:searchWord,$options:'$i'}})
+   .catch((err)=>{
+        console.error(err)
+        return res.status(500).send("Internal server error")
+    })  
+    
+ return res.json(filterResult);
+})
 module.exports = bookRouter

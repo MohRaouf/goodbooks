@@ -30,7 +30,7 @@ authorRouter.get("/top",async (req,res)=>{
 authorRouter.get("/:author_id", async(req, res) => {
     const id = req.params.author_id;
     console.log(id)
-    const author = await AuthorModel.findById(id).populate('book').exec()
+    const author = await AuthorModel.findById(id).populate({ path: 'books', select: '_id name photo' }).exec()
         .catch((err) => {
             console.log(err)
             return res.status(500).send('Internal server error')
@@ -107,5 +107,19 @@ authorRouter.delete("/:author_id", jwtHelpers.verifyAccessToken,jwtHelpers.isAdm
     console.log(`Author Not Found`)
     return res.status(404).send("Book not found")
 })
-
+authorRouter.get("/search/:q",async(req,res)=>{
+    const searchWord=req.params.q
+    console.log(searchWord)
+   const filterResult = await AuthorModel.find({$or:[
+    {fname:{$regex:searchWord,$options:'$i'}},
+    {lname:{$regex:searchWord,$options:'$i'}}
+]})
+   //{fname:{$regex:searchWord,$options:'$i'}}
+    .catch((err)=>{
+         console.error(err)
+         return res.status(500).send("Internal server error")
+     })  
+     //console.log(filterResult)
+  return res.json(filterResult);
+ })
 module.exports = authorRouter;

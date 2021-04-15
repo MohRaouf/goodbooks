@@ -90,5 +90,16 @@ categoryRouter.delete("/:category_id", jwtHelpers.verifyAccessToken, jwtHelpers.
     return res.status(404).send("Book not found")
 
 })
-
+categoryRouter.get("/search/:q",async(req,res)=>{
+    const searchWord=req.params.q
+    console.log(searchWord)
+   const filterResult = await CategoryModel.find({name:{$regex:searchWord,$options:'$i'}})
+   //{fname:{$regex:searchWord,$options:'$i'}}
+    .catch((err)=>{
+         console.error(err)
+         return res.status(500).send("Internal server error")
+     })  
+     //console.log(filterResult)
+  return res.json(filterResult);
+ })
 module.exports = categoryRouter
