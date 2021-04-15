@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema({
     username: { type: String, minimumLength: 4, required: true, lowercase: true, trim: true, unique: true },
     password: { type: String, minimumLength: 4, required: true },
     email: { type: String, required: true, match: /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/ },
-    photo: { data: Buffer, contentType: String },
+    photo: { type: String},
     gender: { type: String, enum: ["m", "f"], required: true }, //new field
     dob: { type: Date, required: true },
     //
