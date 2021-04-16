@@ -4,11 +4,18 @@ const jwtHelpers = require('../helpers/jwt_helper')
 const authorRouter = express.Router();
 
 /* Get All Authors no need for Authentication */
-authorRouter.get("/", (req, res) => {
-    AuthorModel.find().then((allAuthors) => {
-        if (allAuthors) { return res.json(allAuthors) }
-        else { return res.status(404).end() }
-    }).catch((err) => { return res.status(400).end() })
+authorRouter.get("/", async (req, res) => {
+    const page = req.query.page
+    const perPage = req.query.perPage
+    try {
+        const countAuthors = await AuthorModel.countDocuments({})
+        const allAuthors = await AuthorModel.find().skip(parseInt(perPage) * parseInt(page - 1)).limit(parseInt(perPage))
+        if (allAuthors) return res.json({ allAuthors, countAuthors });
+        return res.status(404).end();
+    } catch (err) {
+        return res.status(500).end()
+    }
+
 })
 //when request to get popular author
 // >>> with query
@@ -17,8 +24,7 @@ authorRouter.get("/top", async (req, res) => {
         .then((topAuthors) => {
             if (topAuthors) { return res.json(topAuthors) }
             else { return res.status(404).end() }
-        })
-        .catch((err) => { return res.status(500).end() })
+        }).catch((err) => { return res.status(500).end() })
 })
 
 /* Get Author by ID no need for Authentication */
@@ -75,19 +81,21 @@ authorRouter.delete("/:author_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAd
 
 })
 
-authorRouter.get("/search/:q",async(req,res)=>{
-    const searchWord=req.params.q
+authorRouter.get("/search/:q", async (req, res) => {
+    const searchWord = req.params.q
     console.log(searchWord)
-   const filterResult = await AuthorModel.find({$or:[
-    {fname:{$regex:searchWord,$options:'$i'}},
-    {lname:{$regex:searchWord,$options:'$i'}}
-]})
-   //{fname:{$regex:searchWord,$options:'$i'}}
-    .catch((err)=>{
-         console.error(err)
-         return res.status(500).send("Internal server error")
-     })  
-     //console.log(filterResult)
-  return res.json(filterResult);
- })
+    const filterResult = await AuthorModel.find({
+        $or: [
+            { fname: { $regex: searchWord, $options: '$i' } },
+            { lname: { $regex: searchWord, $options: '$i' } }
+        ]
+    })
+        //{fname:{$regex:searchWord,$options:'$i'}}
+        .catch((err) => {
+            console.error(err)
+            return res.status(500).send("Internal server error")
+        })
+    //console.log(filterResult)
+    return res.json(filterResult);
+})
 module.exports = authorRouter;
