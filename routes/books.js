@@ -1,11 +1,10 @@
 const express = require('express')
 const bookRouter = express.Router()
 const jwtHelpers = require('../helpers/jwt_helper')
-const { populate } = require('../models/author')
 const BookModel = require('../models/book')
-const AuthorModel = require('../models/author')
 
 /* Get All Books no need for Authentication */
+
 bookRouter.get("/", async (req, res) => {
     const page = req.query.page
     const perPage = req.query.perPage
@@ -14,107 +13,83 @@ bookRouter.get("/", async (req, res) => {
          skip(parseInt(perPage)*parseInt(page-1)).limit(parseInt(perPage))
         .populate({ path: 'authorId', select: '_id fname lname' })
         .populate({ path: 'categoryId', select: '_id   name' })
-        .catch((err) => {
-            console.error(err)
-            return res.status(400).send("Bad Request")
+        .then((allBooks) => {
+            return res.json(allBooks);
         })
+
     console.log("All Books : ", allBooks.length)
     return res.json({allBooks,countBooks});
 })
 
-bookRouter.get('/top', async (req, res) => {
+bookRouter.get('/top', (req, res) => {
     // const topBooks= await BookModel.getTopBooks(req.query.size)
-    const topBooks = await BookModel.getTopBooks(4)
-    .then((tops)=>{
-        if (tops) { return res.json(tops); }
-        else { return res.status(404).send("Not Found") }
-    }).catch((err) => { 
-            console.error(err)
-            return res.status(500).send("Internal Server Error") 
-        })
+    BookModel.getTopBooks(4)
+        .then((tops) => {
+            if (tops) return res.json(tops);
+            else return res.status(404).end()
+        }).catch((err) => { return res.status(500).end() })
 })
 
 
 /* Get Book by ID no need for Authentication */
-bookRouter.get("/:book_id", async (req, res) => {
+bookRouter.get("/:book_id", (req, res) => {
     const id = req.params.book_id;
-    console.log(id)
-    const book = await BookModel.findById(id).populate({ path: 'authorId', select: '_id fname lname' })
+    BookModel.findById(id).populate({ path: 'authorId', select: '_id fname lname' })
         .populate({ path: 'categoryId', select: '_id   name' })
-        .populate({path:'reviews', select:'body',populate:{path:"userId",seclect:'_id fname lname'}})
-        .catch((err) => {
-            console.log(err)
-            return res.status(500).send('Internal server error')
+        .populate({ path: 'reviews', select: 'body', populate: { path: "userId", seclect: '_id fname lname' } })
+        .then((book) => {
+            if (book) return res.json(book);
+            return res.status(404).end()
         })
-    if (book) {
-        // console.log(book)
-        return res.json(book);
-    }
-    console.log('Not Found')
-    return res.status(404).send("Not Found")
+        .catch((err) => { return res.status(500).end() })
 })
 /* Insert new Book need Authentication */
 bookRouter.post("/", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
-    console.log(req)
     const bookInfo = {
         name: req.body.name,
         ...(req.body.photo ? { photo: req.body.photo } : {}), //optional
         description: req.body.description,
-        authorId: req.body.authorId,
-        categoryId: req.body.categoryId
+        ...(req.body.authorId ? { authorId: req.body.authorId } : {}), //optional
+        ...(req.body.categoryId ? { categoryId: req.body.categoryId } : {}), //optional
     }
-    // console.log(bookInfo)
-    await BookModel.create(bookInfo).catch(err => {
+    try {
+        await BookModel.create(bookInfo)
+        return res.status(201).end()
+    } catch (err) {
         console.error(err);
-        return res.status(500).send("Failed To Add New Book")
-    }).then(book => {
-        console.log(`Book ${book.name} Added Successfully`)
-        return res.status(201).send("Created")
-    })
+        return res.status(500).end()
+    }
 })
 
 /* Update Book with ID need Authentication */
 bookRouter.patch("/:book_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
     const id = req.params.book_id;
-
-    console.log(`Updating Book ID : ${id}`)
-    console.log('With Data ----> ',req.body)
     const newBookInfo = {
         ...(req.body.name ? { name: req.body.name } : {}),
         ...(req.body.photo ? { photo: req.body.photo } : {}),
         ...(req.body.description ? { description: req.body.description } : {}),
         ...(req.body.categoryId ? { categoryId: req.body.categoryId } : {}),
         ...(req.body.authorId ? { authorId: req.body.authorId } : {}),
-
     }
-    // console.log(`Updated Info : ${newBookInfo}`)
-    const updatedDoc = await BookModel.findByIdAndUpdate({ _id: id }, newBookInfo, { new: true, useFindAndModify: false }).
-        catch((err) => {
-            console.error("====Error===>", err)
-            return res.sendStatus(400)
-        })
-    if (updatedDoc) {
-        // console.log(`Updated Info : ${updatedDoc}`)
-        return res.sendStatus(202)
+    try {
+        const updatedDoc = await BookModel.findByIdAndUpdate({ _id: id }, newBookInfo, { new: true, useFindAndModify: false })
+        if (updatedDoc) return res.status(202).end()
+        return res.status(404)
+    } catch (err) {
+        console.error("====Error===>", err)
+        return res.status(400).end()
     }
-    return res.sendStatus(404)
 })
 
-
 /* Delete Book with ID need Authentication */
-bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, async (req, res) => {
+bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, (req, res) => {
     const id = req.params.book_id;
-    const docToDelete = await BookModel.findByIdAndDelete(id)
-        .catch((err) => {
-            console.error(err)
-            return res.status(500).send("Internal server error")
-        })
-    if (docToDelete) {
-        console.log(`Book ID : ${id} Deleted`)
-        return res.status(200).send("Deleted")
-    }
-    console.log(`Book Not Found`)
-    return res.status(404).send("Book not found")
+    BookModel.findByIdAndDelete(id)
+        .then((deletedDoc) => {
+            if (deletedDoc) return res.status(200).end()
+            return res.status(404).end()
+        }).catch((err) => { return res.status(500).end() })
+
 })
 bookRouter.get("/search/:q",async(req,res)=>{
    const searchWord=req.params.q;

@@ -18,24 +18,23 @@ userRouter.post("/signup", async (req, res) => {
         username: req.body.username,
         fname: req.body.fname,
         lname: req.body.lname,
-
         password: req.body.password,
         dob: req.body.dob,
         email: req.body.email,
         gender: req.body.gender,
-        bookshelf:req.body.bookshelf,
+        bookshelf: req.body.bookshelf,
         ...(req.body.photo ? { photo: req.body.photo } : {})
     })
     console.log(userInstance)
     await userInstance.save().then((user) => {
-        console.log(`New User Added : ${user}`)
-        return res.sendStatus(201);
+        console.log(`New User Added : ${user.username}`)
+        return res.status(201).end();
     }).catch((err) => {
         console.error("====Error===>", err)
         if (err.code == 11000) { /* username duplication - conflict */
-            return res.status(409).send("Duplicated Username")
+            return res.status(409).end()
         }
-        return res.sendStatus(500)
+        return res.status(500).end()
     })
 })
 
@@ -73,113 +72,106 @@ userRouter.post("/login", async (req, res) => {
         }
     } else {
         console.log("User Data NotFound");
-        return res.sendStatus(403);
+        return res.sendStatus(401);
     }
 });
 
 /** get the logged in user info */
-userRouter.get("/login",jwtHelpers.verifyAccessToken, async (req, res) => {
-    const userId=req.userId;
-   const userInstance= await UserModel.findById(userId).catch((err)=>{
-        console.error(err)
-        res.sendStatus(401)
-    })
-    if(userInstance==null){
-        console.log("======== User Info Not Found =========")
-        /** Clear the refresh token */
-        await UserModel.updateOne({ _id: userId }, { refreshToken: null }, { new: true })
-        .catch((err) => {
-            console.error(err);
+userRouter.get("/login", jwtHelpers.verifyAccessToken, async (req, res) => {
+    const userId = req.userId;
+    try {
+        const userInstance = await UserModel.findById(userId)
+        if (userInstance == null) {  /** User Not Found Clear the refresh token */
+            await UserModel.updateOne({ _id: userId }, { refreshToken: null }, { new: true })
             return res.sendStatus(401)
-        }).then(()=>{ return res.sendStatus(401)})
+        }
+        return res.json(userInstance)
     }
-    console.log("======== User Info Sent =========")
-    return res.json(userInstance)
+    catch (err) { return res.sendStatus(401) }
 });
 
-
-const removeBookFromShelf = async (res, userName, bookid)=>{
-    try{
+const removeBookFromShelf = async (res, userName, bookid) => {
+    try {
         result = await UserModel.findOneAndUpdate(
             { username: userName, "bookshelf.bookId": bookid },
-                {
-                    $pull: { bookshelf: { bookId: bookid } },
-                })
-                .then((doc)=>{return doc})
-                .catch((err)=>{res.sendStatus(424); console.log("X[await catch removeBookFromShelf]\n",err); return -1})
+            {
+                $pull: { bookshelf: { bookId: bookid } },
+            })
+            .then((doc) => { return doc })
+            .catch((err) => { res.sendStatus(424); console.log("X[await catch removeBookFromShelf]\n", err); return -1 })
         return result
-    } catch(exception){
+    } catch (exception) {
         console.log("X[removeBookFromShelf]\n")
         res.sendStatus(424)
         return -1
     }
 }
 
-const deleteReview = async (res, userid, bookid)=>{
-    try{
-       result = await ReviewModel.findOneAndDelete({
+const deleteReview = async (res, userid, bookid) => {
+    try {
+        result = await ReviewModel.findOneAndDelete({
             userId: mongoose.Types.ObjectId(userid),
             bookId: mongoose.Types.ObjectId(bookid)
         })
-        .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch deleteReview]\n"); return -1})
+            .then((doc) => { return doc })
+            .catch((err) => { res.sendStatus(424); console.log("X[await catch deleteReview]\n"); return -1 })
         return result
-    }catch(exception){
+    } catch (exception) {
         res.sendStatus(503)
         return -1
 
     }
 }
 
-const getBookInfoToDelete = async(res, reviewId)=>{
-    try{
-        result = BookModel.findOne({reviews: mongoose.Types.ObjectId(reviewId)})
-        .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch getBookInfoToDelete]\n"); return -1})
+const getBookInfoToDelete = async (res, reviewId) => {
+    try {
+        result = BookModel.findOne({ reviews: mongoose.Types.ObjectId(reviewId) })
+            .then((doc) => { return doc })
+            .catch((err) => { res.sendStatus(424); console.log("X[await catch getBookInfoToDelete]\n"); return -1 })
         return result
-    }catch(exception){
+    } catch (exception) {
         res.sendStatus(503)
         return -1
     }
 }
 
-const updateBookInfo = async(res, bookAvgRate, ratingCount, userRate)=>{
-    try{
+const updateBookInfo = async (res, bookAvgRate, ratingCount, userRate) => {
+    try {
         result = BookModel.findOneAndUpdate({ reviews: mongoose.Types.ObjectId(reviewId) },
-        {
-            $pull: { reviews: mongoose.Types.ObjectId(reviewId) },
-            $set:{
-                avgRating: calculatedHelper.deleteRateFromBook(bookAvgRate, ratingCount, parseInt(userRate)),
-            },
-            $inc: { ratingCount: ratingCount>0?-1:0},
-        })
-        .then((doc)=>{return doc})
-        .catch((err)=>{res.sendStatus(424); console.log("X[await catch updatebookInfo]\n"); return -1})
+            {
+                $pull: { reviews: mongoose.Types.ObjectId(reviewId) },
+                $set: {
+                    avgRating: calculatedHelper.deleteRateFromBook(bookAvgRate, ratingCount, parseInt(userRate)),
+                },
+                $inc: { ratingCount: ratingCount > 0 ? -1 : 0 },
+            })
+            .then((doc) => { return doc })
+            .catch((err) => { res.sendStatus(424); console.log("X[await catch updatebookInfo]\n"); return -1 })
         return result
-    }catch(exception){
-        console.log("X[updatebookInfo]\n",exception);
+    } catch (exception) {
+        console.log("X[updatebookInfo]\n", exception);
         res.sendStatus(503)
         return -1
     }
 }
 
-userRouter.delete("/remove_book", jwtHelpers.verifyAccessToken,async(req, res)=>{
+userRouter.delete("/remove_book", jwtHelpers.verifyAccessToken, async (req, res) => {
     const reqUsername = req.body.username;
     const bookId = req.body.bookId;
     const userRate = req.body.userRate;
     const bookAvgRate = req.body.avgRate;
-    userDoc= await removeBookFromShelf(res, reqUsername, bookId)
+    userDoc = await removeBookFromShelf(res, reqUsername, bookId)
 
 
-    if(userDoc != -1){
+    if (userDoc != -1) {
         console.log("======================= 1 ============================")
         console.log(userDoc)
         deleteReviewDoc = await deleteReview(res, userDoc._id, bookId)
-        if(deleteReviewDoc != -1){
+        if (deleteReviewDoc != -1) {
             console.log("====================== 2 =============================")
             console.log(deleteReviewDoc)
             getBookInfoToDeleteDoc = await getBookInfoToDelete(res, deleteReviewDoc._id)
-            if(getBookInfoToDeleteDoc != -1){
+            if (getBookInfoToDeleteDoc != -1) {
                 console.log("===================== 3 ==============================")
                 console.log(getBookInfoToDeleteDoc)
                 updateBookInfDoc = await updateBookInfo(res, deleteReviewDoc._id, bookAvgRate, getBookInfoToDeleteDoc.ractingCount, userRate)
@@ -202,17 +194,17 @@ userRouter.delete("/remove_book_old", async (req, res) => {
     ).then((userDoc) => { //findOneAndUpdate starts
         console.log("BookId:", book)
         console.log("UserId:", userDoc._id)
-        if(userDoc){
+        if (userDoc) {
             ReviewModel.findOneAndDelete({
                 userId: mongoose.Types.ObjectId(userDoc._id),
                 bookId: mongoose.Types.ObjectId(book)
-            },).then((reviewDocs)=>{
+            }).then((reviewDocs) => {
                 console.log("review:", reviewDocs)
                 BookModel.findOne(
                     {
                         reviews: mongoose.Types.ObjectId(reviewDocs._id)
                     }
-                    ).then((reviewDoc)=>{
+                ).then((reviewDoc) => {
                     console.log("book:", reviewDoc)
                     console.log("book Id:", reviewDoc._id)
                     console.log("Rating count:", reviewDoc.ratingCount)
@@ -220,42 +212,42 @@ userRouter.delete("/remove_book_old", async (req, res) => {
                         { reviews: mongoose.Types.ObjectId(reviewDocs._id) },
                         {
                             $pull: { reviews: mongoose.Types.ObjectId(reviewDocs._id) },
-                            $set:{
+                            $set: {
                                 avgRating: calculatedHelper.deleteRateFromBook(bookAvgRate, reviewDoc.ratingCount, parseInt(userRate)),
                             },
-                            $inc: { ratingCount: reviewDoc.ratingCount>0?-1:0},
+                            $inc: { ratingCount: reviewDoc.ratingCount > 0 ? -1 : 0 },
                         },
-                        ).then((bookDoc)=>{
-                            console.log("Updated Book info:", bookDoc)
-                            res.send(200).status("DeletedOk")
-                        }).catch((err)=>{
-                            if(err){
-                                console.log("Error happened in deletion step\n:", err)
-                                res.send(503).status("BookDeleteErr")
-                            }
-                        })
-                }).catch((err)=>{
-                    if(err){
+                    ).then((bookDoc) => {
+                        console.log("Updated Book info:", bookDoc)
+                        res.send(200).status("DeletedOk")
+                    }).catch((err) => {
+                        if (err) {
+                            console.log("Error happened in deletion step\n:", err)
+                            res.send(503).status("BookDeleteErr")
+                        }
+                    })
+                }).catch((err) => {
+                    if (err) {
                         console.log("Error happened in searching step\n:", err)
                         res.send(503).status("BookSearchErr")
                     }
                 })
-            }).catch((err)=>{
-                if(err){
+            }).catch((err) => {
+                if (err) {
                     console.log("Error happened in searching review step\n:", err)
                     res.send(503).status("ReviewErr")
                 }
             })
-        } 
-    })
-    .catch((err) => { //findOneAndUpdate ends
-        if(err){
-            console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
-            res.send(503).status("UserSearchingErr")
         }
-        console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
-        res.sendStatus(404)
     })
+        .catch((err) => { //findOneAndUpdate ends
+            if (err) {
+                console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
+                res.send(503).status("UserSearchingErr")
+            }
+            console.log("\n---------------------------\nNo User found:\n---------------------------\n", err)
+            res.sendStatus(404)
+        })
 })
 
 
@@ -358,32 +350,32 @@ userRouter.patch("/:bookid", jwtHelpers.verifyAccessToken, async (req, res) => {
 
     const newStatus = req.body.newStatus;
     const bookAvg = req.body.bookAvg;
-    const newRate= req.body.newRate;
+    const newRate = req.body.newRate;
 
-    try{
-        await UserModel.findOneAndUpdate({username:username,'bookshelf.bookId':bookId},
-        {
-            ...(bookshelf.rate ? { "bookshelf.$.rate": newRate }: {}),
-            ...(bookshelf.status ? { "bookshelf.$.status": newStatus}: {})
+    try {
+        await UserModel.findOneAndUpdate({ username: username, 'bookshelf.bookId': bookId },
+            {
+                ...(bookshelf.rate ? { "bookshelf.$.rate": newRate } : {}),
+                ...(bookshelf.status ? { "bookshelf.$.status": newStatus } : {})
 
-        }).then( (userDoc)=>{
+            }).then((userDoc) => {
                 BookModel.findOne(
-                    {_id :mongoose.Types.ObjectId(bookId)}
-                ).then((bookDoc)=>{
-                const oldRate = bookDoc.avgRating;
-                const ratingCount = bookDoc.ratingCount;
-                console.log(bookDoc)
-                BookModel.findOneAndUpdate({_id :mongoose.Types.ObjectId(bookId)},{
-                    $set:{
-                        avgRating : calculatedHelper.editBookRate(bookAvg,ratingCount,rate,newRate)
-                    }
-                }).then((data)=>{
-                    res.sendStatus(200)
+                    { _id: mongoose.Types.ObjectId(bookId) }
+                ).then((bookDoc) => {
+                    const oldRate = bookDoc.avgRating;
+                    const ratingCount = bookDoc.ratingCount;
+                    console.log(bookDoc)
+                    BookModel.findOneAndUpdate({ _id: mongoose.Types.ObjectId(bookId) }, {
+                        $set: {
+                            avgRating: calculatedHelper.editBookRate(bookAvg, ratingCount, rate, newRate)
+                        }
+                    }).then((data) => {
+                        res.sendStatus(200)
+                    })
                 })
             })
-        })
-    }catch(e){ 
+    } catch (e) {
         res.sendStatus(503).sendStatus(e.message)
-    } 
+    }
 })
 module.exports = userRouter;
