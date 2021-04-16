@@ -5,13 +5,16 @@ const authorRouter = express.Router();
 
 /* Get All Authors no need for Authentication */
 authorRouter.get("/", async(req, res) => {
-    const allAuthors = await AuthorModel.find()
+    const page = req.query.page
+    const perPage = req.query.perPage
+    const countAuthors = await AuthorModel.countDocuments({})
+    const allAuthors = await AuthorModel.find().skip(parseInt(perPage)*parseInt(page-1)).limit(parseInt(perPage))
         .catch((err) => {
             console.error(err)
             return res.status(400).send("Bad Request")
         })
-    // console.log("All Authors : ", allAuthors)
-    return res.json(allAuthors);
+    console.log("All Authors : ", allAuthors.length)
+    return res.json({allAuthors,countAuthors});
 })
 //when request to get popular author
 // >>> with query
