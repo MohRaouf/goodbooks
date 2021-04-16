@@ -4,21 +4,18 @@ const jwtHelpers = require('../helpers/jwt_helper')
 const BookModel = require('../models/book')
 
 /* Get All Books no need for Authentication */
-
 bookRouter.get("/", async (req, res) => {
     const page = req.query.page
     const perPage = req.query.perPage
-    const countBooks = await BookModel.countDocuments({})
-    const allBooks = await BookModel.find().select("_id name description authorId categoryId photo").
-         skip(parseInt(perPage)*parseInt(page-1)).limit(parseInt(perPage))
-        .populate({ path: 'authorId', select: '_id fname lname' })
-        .populate({ path: 'categoryId', select: '_id   name' })
-        .then((allBooks) => {
-            return res.json(allBooks);
-        })
-
-    console.log("All Books : ", allBooks.length)
-    return res.json({allBooks,countBooks});
+    try {
+        const countBooks = await BookModel.countDocuments({})
+        const allBooks = await BookModel.find().select("_id name description authorId categoryId photo").
+            skip(parseInt(perPage) * parseInt(page - 1)).limit(parseInt(perPage))
+            .populate({ path: 'authorId', select: '_id fname lname' })
+            .populate({ path: 'categoryId', select: '_id   name' })
+        if (allBooks) return res.json({ allBooks, countBooks });
+        return res.status(404).end()
+    } catch (err) { return res.status(500).end() }
 })
 
 bookRouter.get('/top', (req, res) => {
@@ -29,8 +26,6 @@ bookRouter.get('/top', (req, res) => {
             else return res.status(404).end()
         }).catch((err) => { return res.status(500).end() })
 })
-
-
 /* Get Book by ID no need for Authentication */
 bookRouter.get("/:book_id", (req, res) => {
     const id = req.params.book_id;
@@ -80,7 +75,6 @@ bookRouter.patch("/:book_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, 
         return res.status(400).end()
     }
 })
-
 /* Delete Book with ID need Authentication */
 bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin, (req, res) => {
     const id = req.params.book_id;
@@ -91,15 +85,15 @@ bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin,
         }).catch((err) => { return res.status(500).end() })
 
 })
-bookRouter.get("/search/:q",async(req,res)=>{
-   const searchWord=req.params.q;
-   console.log(searchWord)
-  const filterResult = await BookModel.find({name:{$regex:searchWord,$options:'$i'}})
-   .catch((err)=>{
-        console.error(err)
-        return res.status(500).send("Internal server error")
-    })  
-    
- return res.json(filterResult);
+bookRouter.get("/search/:q", async (req, res) => {
+    const searchWord = req.params.q;
+    console.log(searchWord)
+    const filterResult = await BookModel.find({ name: { $regex: searchWord, $options: '$i' } })
+        .catch((err) => {
+            console.error(err)
+            return res.status(500).send("Internal server error")
+        })
+
+    return res.json(filterResult);
 })
 module.exports = bookRouter
