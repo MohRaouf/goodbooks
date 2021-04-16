@@ -74,4 +74,20 @@ authorRouter.delete("/:author_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAd
         }).catch((err) => { return res.status(500).end() })
 
 })
+
+authorRouter.get("/search/:q",async(req,res)=>{
+    const searchWord=req.params.q
+    console.log(searchWord)
+   const filterResult = await AuthorModel.find({$or:[
+    {fname:{$regex:searchWord,$options:'$i'}},
+    {lname:{$regex:searchWord,$options:'$i'}}
+]})
+   //{fname:{$regex:searchWord,$options:'$i'}}
+    .catch((err)=>{
+         console.error(err)
+         return res.status(500).send("Internal server error")
+     })  
+     //console.log(filterResult)
+  return res.json(filterResult);
+ })
 module.exports = authorRouter;
