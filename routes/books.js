@@ -30,8 +30,11 @@ bookRouter.get('/top', async(req, res) => {
 
 /* Get Book by ID no need for Authentication */
 bookRouter.get("/:book_id", async(req, res) => {
+    console.log("IN BOOK ID:")
     const id = req.params.book_id;
-    console.log(id)
+    const userId = req.body.userID;
+
+    console.log("USER ID IN BOOKID:", userId)
     const book = await BookModel.findById(id).populate({ path: 'authorId', select: '_id fname lname' })
         .populate({ path: 'categoryId', select: '_id   name' })
         .populate({path:'reviews', select:'body',populate:{path:"userId",seclect:'_id fname lname'}})
