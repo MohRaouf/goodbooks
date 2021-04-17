@@ -11,7 +11,8 @@ const CategorySchema = new mongoose.Schema({
 
 //static function to get popular categories
 CategorySchema.statics.getTopCategories=function (num){
-return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+// return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+return this.find().sort({"books":-1}).limit(5)
 }
 
 CategorySchema.pre('remove', async() => {
