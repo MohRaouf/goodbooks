@@ -1,7 +1,8 @@
 const mongoose = require('mongoose')
 
-const UNKNOWN_AUTHOR_ID = "606c0efd4ec9b9134cb14df7"
 const BookModel = require('./book')
+const unknown = require('../config')
+const UNKNOWN_AUTHOR_ID = "60747906318c453ac2776be8"
 
 const AuthorSchema = new mongoose.Schema({
 
@@ -18,13 +19,14 @@ AuthorSchema.pre('deleteOne', { document: false, query: true }, async function(n
     console.log('==================> In Author pre middle ware')
     const delAuthorId = this.getFilter()["_id"];
     console.log('delAuthorId', delAuthorId)
-    await BookModel.updateOne({ authorId: delAuthorId }, { authorId: UNKNOWN_AUTHOR_ID })
+    await BookModel.updateMany({ authorId: delAuthorId }, { authorId: UNKNOWN_AUTHOR_ID })
         .catch((err) => next(err)).then(next())
 });
 
 //static function to get popular authors
-AuthorSchema.statics.getTopAuthors=function(num){
-    return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+AuthorSchema.statics.getTopAuthors=function(){
+    // return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+    return this.find().sort({"books":-1}).limit(5);
  }
 //exports author model 
 const AuthorModel = mongoose.model('author', AuthorSchema)

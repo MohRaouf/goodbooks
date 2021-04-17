@@ -10,68 +10,75 @@ const mongoose = require('mongoose');
 const BookModel = require("../models/book");
 
 /* Sign up New User */
-userRouter.post("/signup", async (req, res) => {
+
+userRouter.post("/signup", (req, res) => {
     const userInstance = new UserModel({
         username: req.body.username,
         fname: req.body.fname,
         lname: req.body.lname,
-
         password: req.body.password,
         dob: req.body.dob,
         email: req.body.email,
         gender: req.body.gender,
-        bookshelf:req.body.bookshelf,
+        bookshelf: req.body.bookshelf,
         ...(req.body.photo ? { photo: req.body.photo } : {})
     })
-    console.log(userInstance)
-    await userInstance.save().then((user) => {
-        console.log(`New User Added : ${user}`)
-        return res.sendStatus(201);
+    userInstance.save().then((user) => {
+        console.log(`New User Added : ${user.username}`)
+        return res.status(201).end();
     }).catch((err) => {
-        console.error("====Error===>", err)
-        if (err.code == 11000) { /* username duplication - conflict */
-            return res.status(409).send("Duplicated Username")
-        }
-        return res.sendStatus(500)
+        /* username duplication - conflict */
+        if (err.code == 11000) return res.status(409).end()
+        return res.status(500).end()
     })
 })
 
-/* Login --> Send Access Token + Refresh Token */
+/* Login --> status Access Token + Refresh Token */
 userRouter.post("/login", async (req, res) => {
     const reqUsername = req.body.username;
     const reqPassword = req.body.password;
+    try {
+        // Verify Login Info from Database
+        const userInstance = await UserModel.findOne({ username: reqUsername })
 
-    // Verify Login Info from Database
-    const userInstance = await UserModel.findOne({ username: reqUsername })
-        .catch((err) => {
-            console.error(err)
-            return res.sendStatus(503)
-        })
+        //User Found
+        if (userInstance) {
+            if (await userInstance.isValidPassword(reqPassword)) {
 
-    //User Found
-    if (userInstance) {
-        if (await userInstance.isValidPassword(reqPassword)) {
+                const userId = { userId: userInstance.id }
+                const accessToken = jwtHelpers.generateAccessToken(userId)
+                const refreshToken = jwtHelpers.generateRefreshToken(userId)
 
-            const userId = { userId: userInstance.id }
-            const accessToken = jwtHelpers.generateAcessToken(userId)
-            const refreshToken = jwtHelpers.generateRefreshToken(userId)
-
-            UserModel.updateOne({ _id: userInstance.id }, { refreshToken: refreshToken }).then((result) => {
-                if (result) return res.json({ accessToken: accessToken, refreshToken: refreshToken })
-                else return res.sendStatus(500)
-            }).catch((err) => {
-                console.log(err)
-                return res.sendStatus(500)
-            })
-
+                UserModel.updateOne({ _id: userInstance.id }, { refreshToken: refreshToken }).then((result) => {
+                    if (result) return res.json({ accessToken: accessToken, refreshToken: refreshToken })
+                    else return res.status(500).end();
+                }).catch((err) => {
+                    console.log(err)
+                    return res.status(500).end()
+                })
+            } else {
+                console.log("Invalid Username Or Password");
+                return res.status(401).end();
+            }
         } else {
-            console.log("Invalid Username Or Password");
-            return res.sendStatus(401);
+            console.log("User Data NotFound");
+            return res.status(401).end();
         }
-    } else {
-        console.log("User Data NotFound");
-        return res.sendStatus(403);
     }
+    catch (err) { return res.status(500).end() }
+});
+
+/** get the logged in user info */
+userRouter.get("/login", jwtHelpers.verifyAccessToken, async (req, res) => {
+    const userId = req.userId;
+    try {
+        const userInstance = await UserModel.findById(userId)
+        if (userInstance == null) {  /** User Not Found Clear the refresh token */
+            await UserModel.updateOne({ _id: userId }, { refreshToken: null }, { new: true })
+            return res.status(401).end()
+        }
+        return res.json(userInstance)
+    } catch (err) { return res.status(401).end() }
 });
 
 // userRouter.delete("/remove_book", async(req, res)=>{
@@ -250,59 +257,58 @@ userRouter.post("/add_book", jwtHelpers.verifyAccessToken, async (req, res) => {
 /* Update Access Token */
 userRouter.post("/refresh", async (req, res) => {
     const refreshToken = req.body.refreshToken;
-    if (refreshToken == null) return res.sendStatus(401);
+    if (refreshToken == null) return res.status(401).end();
     console.log(`Body Refresh Token : ${refreshToken}`)
 
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
-        if (err) return res.sendStatus(403)
+        if (err) return res.status(403).end()
         const userId = userInfo.userId;
         console.log(`Extracted UserId from RefreshToken ==> ${userId}`)
 
         const userInstance = await UserModel.findById(userId)
             .catch((err) => {
                 console.error(err);
-                return res.sendStatus(503)
+                return res.status(503).end()
             })
 
         if (!userInstance) {
             console.error('User not found')
-            return res.status(404).send(`User Doesn't Exist`)
+            return res.status(401).end()
         }
         console.log(`User Refresh Token : ${userInstance.refreshToken}`)
         if (userInstance.refreshToken != null && userInstance.refreshToken === refreshToken) {
-            const newAccessToken = jwtHelpers.generateAcessToken({ userId: userId })
+            const newAccessToken = jwtHelpers.generateAccessToken({ userId: userId })
             console.log('Access Token Updated')
             return res.json({ accessToken: newAccessToken })
         }
 
         console.error('User Refresh Token Is not Set')
-        return res.status(401).send(`User Refresh Token Is not Set`)
+        return res.status(401).end()
     })
 })
-
 /* Logout --> Delete User Refresh Token From DB */
 userRouter.post("/logout", async (req, res) => {
 
     const refreshToken = req.body.refreshToken;
-    if (refreshToken == null) return res.sendStatus(401);
+    if (refreshToken == null) return res.status(401).end();
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
 
-        if (err) return res.sendStatus(403)
+        if (err) return res.status(403)
         const userId = userInfo.userId;
         console.log(`Extracted userId from RefreshToken ==> ${userId}`)
 
         const userInstance = await UserModel.updateOne({ _id: userId }, { refreshToken: null }, { new: true })
             .catch((err) => {
                 console.error(err);
-                return res.sendStatus(503)
+                return res.status(503)
             })
         if (!userInstance) {
             console.error('User not found')
-            return res.sendStatus(401)
+            return res.status(401)
         }
         console.log(`${userInstance}`)
         console.log(`User Logged out - Refresh Token Reset`)
-        return res.sendStatus(200)
+        return res.status(200)
     })
 })
 
@@ -345,6 +351,7 @@ userRouter.get("/:status", jwtHelpers.verifyAccessToken, async (req, res) => {
             if (err) {
                 console.log(err)
                 return handleError(err);
+
             }
             // console.log('The doc is: ', doc);
             // console.log('The doc length is: ', doc.length);
