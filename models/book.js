@@ -13,9 +13,10 @@ const BookSchema = new mongoose.Schema({
     ratingCount: { type: Number, default: 0 }, //calculated
 })
 
-BookSchema.statics.getTopBooks=function (rate){
-    return this.find().and([{"$expr": {"$gte": [{$size: "$reviews"}, 2]}},{ "avgRating" : {$gte :parseInt(rate)}}]);
-  }
+BookSchema.statics.getTopBooks=function (){
+    // return this.find().and([{"$expr": {"$gte": [{$size: "$reviews"}, 2]}},{ "avgRating" : {$gte :parseInt(rate)}}]);
+    return this.find().sort({avgRating:-1}).limit(5)  
+}
 
 
 BookSchema.post('save', async function(doc) {
