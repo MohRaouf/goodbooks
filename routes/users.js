@@ -534,11 +534,11 @@ userRouter.patch("/update_userinfo/:userId", async (req, res) => {
     }
 })
 
-userRouter.get("/get_user/:userId",  async (req, res) => {
+userRouter.post("/get_user/:userId",  jwtHelpers.verifyAccessToken, async (req, res) => {
     console.log("################################################################\n")
     try{
         console.log("################################################################\n")
-        const userId = req.params.userId
+        const userId = req.userId
         await UserModel.find({_id: userId})
         .then((doc)=>{
             if(doc){
