@@ -9,7 +9,7 @@ bookRouter.get("/", async (req, res) => {
     const perPage = req.query.perPage
     try {
         const countBooks = await BookModel.countDocuments({})
-        const allBooks = await BookModel.find().select("_id name description authorId categoryId photo").
+        const allBooks = await BookModel.find().select("_id name description authorId categoryId photo avgRating").
             skip(parseInt(perPage) * parseInt(page - 1)).limit(parseInt(perPage))
             .populate({ path: 'authorId', select: '_id fname lname' })
             .populate({ path: 'categoryId', select: '_id   name' })
