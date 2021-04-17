@@ -1,8 +1,8 @@
 const mongoose = require('mongoose')
 const BookModel = require('./book')
+const unknown = require('../config')
 
-const UNKOWN_CATEGORY_ID = "606c0f1c4ec9b9134cb14df8"
-
+const UNKOWN_CATEGORY_ID = "6074790a318c453ac2776be9"
 const CategorySchema = new mongoose.Schema({
     name: { type: String, required: true },
     photo: { type: String },
@@ -10,13 +10,14 @@ const CategorySchema = new mongoose.Schema({
 })
 
 //static function to get popular categories
-CategorySchema.statics.getTopCategories=function (num){
-return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+CategorySchema.statics.getTopCategories=function (){
+// return this.find({"$expr": {"$gte": [{$size: "$books"}, parseInt(num)]}});
+return this.find().sort({"books":-1}).limit(5)
 }
 
 CategorySchema.pre('remove', async() => {
     // Remove all the docs that refers
-    await this.model('book').updateOne({ categoryId: this._id }, { categoryId: UNKOWN_CATEGORY_ID })
+    await this.model('book').updateMany({ categoryId: this._id }, { categoryId: UNKOWN_CATEGORY_ID })
         .then(() => next())
         .catch((err) => { next(err) })
 });

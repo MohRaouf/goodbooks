@@ -34,7 +34,7 @@ function verifyAccessToken(req, res, next) {
     })
 }
 
-function generateAcessToken(userId) {
+function generateAccessToken(userId) {
     return (jwt.sign(userId, process.env.ACCESS_TOKEN_SECERET, { expiresIn: '1h' })) //1 Hour
 }
 
@@ -44,7 +44,7 @@ function generateRefreshToken(userId) {
 
 module.exports = {
     verifyAccessToken,
-    generateAcessToken,
+    generateAccessToken,
     generateRefreshToken,
     isAdmin
 }

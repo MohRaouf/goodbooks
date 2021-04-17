@@ -1,5 +1,4 @@
 var cors = require('cors')
-
 require('dotenv').config()
 require("./boot/dbConnecion");
 const { json, urlencoded } = require('express');
