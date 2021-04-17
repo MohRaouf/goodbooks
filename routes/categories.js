@@ -6,14 +6,22 @@ const CategoryModel = require('../models/category')
 /* Get All Categories no need for Authentication */
 
 categoryRouter.get("/", async (req, res) => {
-    const page = req.query.page
-    const perPage = req.query.perPage
-    try {
-        const countCategories = await CategoryModel.countDocuments({})
-        const allCategories = await CategoryModel.find().skip(parseInt(perPage) * parseInt(page - 1)).limit(parseInt(perPage))
-        if (allCategories) return res.json({ allCategories, countCategories });
-        return res.status(404).end()
-    } catch (err) { return res.status(500).end() }
+    if (req.query.page) {
+        const page = req.query.page
+        const perPage = req.query.perPage
+        try {
+            const countCategories = await CategoryModel.countDocuments({})
+            const allCategories = await CategoryModel.find().skip(parseInt(perPage) * parseInt(page - 1)).limit(parseInt(perPage))
+            if (allCategories) return res.json({ allCategories, countCategories });
+            return res.status(404).end()
+        } catch (err) { return res.status(500).end() }
+    }else{
+        try {
+            const allCategories = await CategoryModel.find()
+            if (allCategories) return res.json(allCategories);
+            return res.status(404).end()
+        } catch (err) { return res.status(500).end() }
+    }
 })
 
 /* get popular categories */

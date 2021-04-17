@@ -5,17 +5,26 @@ const authorRouter = express.Router();
 
 /* Get All Authors no need for Authentication */
 authorRouter.get("/", async (req, res) => {
-    const page = req.query.page
-    const perPage = req.query.perPage
-    try {
-        const countAuthors = await AuthorModel.countDocuments({})
-        const allAuthors = await AuthorModel.find().skip(parseInt(perPage) * parseInt(page - 1)).limit(parseInt(perPage))
-        if (allAuthors) return res.json({ allAuthors, countAuthors });
-        return res.status(404).end();
-    } catch (err) {
-        return res.status(500).end()
+    if (req.query.page) {
+        const page = req.query.page
+        const perPage = req.query.perPage
+        try {
+            const countAuthors = await AuthorModel.countDocuments({})
+            const allAuthors = await AuthorModel.find().skip(parseInt(perPage) * parseInt(page - 1)).limit(parseInt(perPage))
+            if (allAuthors) return res.json({ allAuthors, countAuthors });
+            return res.status(404).end();
+        } catch (err) {
+            return res.status(500).end()
+        }
+    } else {
+        try {
+            const allAuthors = await AuthorModel.find()
+            if (allAuthors) return res.json(allAuthors);
+            return res.status(404).end();
+        } catch (err) {
+            return res.status(500).end()
+        }
     }
-
 })
 //when request to get popular author
 // >>> with query
