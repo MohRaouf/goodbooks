@@ -504,11 +504,51 @@ userRouter.patch("/edit_book_status/:bookId", jwtHelpers.verifyAccessToken, asyn
     } 
 })
 
-userRouter.get("/get_user",  jwtHelpers.verifyAccessToken, async (req, res) => {
+/** req body: {username:, fname:, lname:, dob:, gender:, password:, email:, }*/
+userRouter.patch("/update_userinfo/:userId", async (req, res) => {
+    const info = req.body.info
+    try{
+        await UserModel.updateOne({_id: mongoose.Types.ObjectId(userId)},
+        {
+            $set:{
+                username: info.username,
+                fname: info.fname,
+                lname: info.lname,
+                dob: info.dob,
+                gender: info.gender,
+                email: info.email
+            }
+        }
+        ).then((doc)=>{
+            if(doc.nModified == 1){
+                console.log("FOUND AND UPDATED")
+                res.json({status:200})
+                return
+            }
+            else{
+                res.json({status:503})
+                return
+            }
+        }).catch((err)=>{
+            if(err){
+                console.log("FOUND AND UPDATED")
+                res.json({status:503})
+                return
+            }
+        })
+    }
+    catch(err){
+        console.log(err)
+        res.json({status:503})
+        return
+    }
+})
+
+userRouter.get("/get_user/:userId",  async (req, res) => {
     console.log("################################################################\n")
     try{
         console.log("################################################################\n")
-        const userId = req.userId
+        const userId = req.params.userId
         await UserModel.find({_id: userId})
         .then((doc)=>{
             if(doc){
