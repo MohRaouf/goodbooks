@@ -75,7 +75,7 @@ userRouter.post("/login", async (req, res) => {
 });
 
 // userRouter.delete("/remove_book", async(req, res)=>{
-userRouter.delete("/remove_book/:bookId/:userRate/:avgRate", async(req, res)=>{
+userRouter.delete("/remove_book/:bookId/:userRate/:avgRate", jwtHelpers.verifyAccessToken, async(req, res)=>{
     console.log("REMOVE CALLED")
     const userId = req.userId;
     const reqUsername = req.params.username;
@@ -310,31 +310,54 @@ userRouter.post("/logout", async (req, res) => {
 //first get user by id then make projection on bookshelf array to filter by status then slice [skip,limit ]for pagination
 userRouter.get("/:status", jwtHelpers.verifyAccessToken, async (req, res) => {
     var userId = req.userId
-    console.log("[In Bookshelf data] UserId:",userId)
+    // console.log("[In Bookshelf data] UserId:",userId)
     console.log(req.params.status)
     var Status = req.params.status !== "a" ? [req.params.status] : ["r", "c", "w"]
     var Page = req.query.pg ? req.query.pg : 0
-    UserModel.find({_id:  mongoose.Types.ObjectId(userId)},
-    {"bookshelf":{$in:{status: Status}}
-    }).select("bookshelf")
-    .populate({path: "bookshelf.bookId", select:"-reviews", 
-    populate:[
-        {path: "authorId", select:"_id fname lname"}, 
-        {path: "categoryId", select:"_id name"}
-        ] })
-        .exec(function (err, doc) {
-        if (err) {
-            console.log(err)
-            return handleError(err);
-        }
-        console.log('The doc is: ', doc);
-        console.log('The doc length is: ', doc.length);
-        console.log('The doc is: ', doc[0].bookshelf[0]);
-        console.log('The doc is: ', doc[0].bookshelf[1]);
-        res.json({status:200, result: doc[0].bookshelf})
+    try{
+            // const user = UserModel.aggregate(
+            //     [{ $match: { _id: mongoose.Types.ObjectId(req.userId) } }, {
+            //         $project: {
+            //             bookshelf: [{
+            //                 $filter: {
+            //                     input: '$bookshelf',
+            //                     as: 'book',
+            //                     cond: { $in: ["$$book.status", Status] },
+            //                 }
+            //             }], _id: 0
+            //         }
+            //     }], function (err, result) {
+            //         if (err) {
+            //             res.send(err);
+            //         } else {
+            //             result[0].bookshelf[0].populate({path: "bookshelf.bookId", select:"-reviews"})
+            //         }
+            //     })
+            // console.log(user)
+        UserModel.find({_id:  mongoose.Types.ObjectId(userId)})
+        .select("bookshelf").where(`bookshelf.status === w`)
+        .populate({path: "bookshelf.bookId", select:"-reviews", 
+        populate:[
+            {path: "authorId", select:"_id fname lname"}, 
+            {path: "categoryId", select:"_id name"}
+            ] })
+            .exec(function (err, doc) {
+            if (err) {
+                console.log(err)
+                return handleError(err);
+            }
+            // console.log('The doc is: ', doc);
+            // console.log('The doc length is: ', doc.length);
+            // console.log('The doc is: ', doc[0].bookshelf[0]);
+            // console.log('The doc is: ', doc[0].bookshelf[1]);
+            res.json({status:200, result: doc[0].bookshelf})
+            return;
+            // prints "The author is Ian Fleming"
+          });
+    }catch(err){
+        res.json({status:501, result:{}})
         return;
-        // prints "The author is Ian Fleming"
-      });
+    }
     console.log("***************************************")
 });
 
@@ -481,4 +504,32 @@ userRouter.patch("/edit_book_status/:bookId", jwtHelpers.verifyAccessToken, asyn
     } 
 })
 
+userRouter.get("/get_user",  jwtHelpers.verifyAccessToken, async (req, res) => {
+    console.log("################################################################\n")
+    try{
+        console.log("################################################################\n")
+        const userId = req.userId
+        await UserModel.find({_id: userId})
+        .then((doc)=>{
+            if(doc){
+                console.log("################################################################\n",doc)
+                return res.json({status:200, result:{doc}})
+            }
+            else{
+                console.log("############################ERRRRR####################################\n")
+                console.log("ERR", doc)
+                return res.json({status:400, result:{}})
+            };
+        }).catch((err)=>{
+            console.log("############################ERRRRR CATCH####################################\n")
+            console.log("ERR", doc)
+            return res.json({status:400, result:{}})
+
+        })
+    }catch(err){
+        console.log(doc)
+        return res.json({status:503, result:{}})
+
+    }
+})
 module.exports = userRouter;
