@@ -19,7 +19,7 @@ categoryRouter.get("/", async (req, res) => {
 /* get popular categories */
 // >>> without querystring
 categoryRouter.get('/top', (req, res) => {
-    CategoryModel.getTopCategories(4)
+    CategoryModel.getTopCategories()
         .then((topCategories) => {
             if (topCategories) return res.json(topCategories)
             return res.status(404).end()

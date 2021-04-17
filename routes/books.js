@@ -20,7 +20,7 @@ bookRouter.get("/", async (req, res) => {
 
 bookRouter.get('/top', (req, res) => {
     // const topBooks= await BookModel.getTopBooks(req.query.size)
-    BookModel.getTopBooks(4)
+    BookModel.getTopBooks()
         .then((tops) => {
             if (tops) return res.json(tops);
             else return res.status(404).end()

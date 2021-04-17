@@ -20,7 +20,7 @@ authorRouter.get("/", async (req, res) => {
 //when request to get popular author
 // >>> with query
 authorRouter.get("/top", async (req, res) => {
-    AuthorModel.getTopAuthors(1)
+    AuthorModel.getTopAuthors()
         .then((topAuthors) => {
             if (topAuthors) { return res.json(topAuthors) }
             else { return res.status(404).end() }
