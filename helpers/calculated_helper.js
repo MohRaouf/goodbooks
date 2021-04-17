@@ -10,20 +10,6 @@
 */
 
 
-editBookRate = function(bookRate, NUsers, userOldRate, userNewRate){
-    sub = deleteRateFromBook(bookRate, NUsers, userOldRate)
-    newAvg = addRateToBook(bookRate, NUsers, userNewRate)
-
-    // console.log(bookRate, NUsers, userOldRate)
-
-    // subAv = (bookRate*NUsers / (5-userOldRate<=1?1:userOldRate-1)) / (NUsers<=1?1:NUsers-1)
-    // console.log(subAv)
-    // updatedBookRate = subAv + ((userOldRate - subAv) / (NUsers===0?1:NUsers))
-
-    // console.log(subAv, updatedBookRate)
-    return newAvg
-}
-
 /**
  * Ex1:
  *  totalRate = 5, Nuser = 1, oldRate = 5
@@ -40,7 +26,6 @@ editBookRate = function(bookRate, NUsers, userOldRate, userNewRate){
 
 deleteRateFromBook = function(bookRate, NUsers, userOldRate){
     console.log(bookRate, NUsers, userOldRate)
-    // subAv = (bookRate*NUsers / (5-userOldRate<=1?1:userOldRate-1)) / (NUsers<=1?1:NUsers-1)
     subAv = ((bookRate*NUsers) - userOldRate) / (NUsers<=1?1:NUsers-1)
     return subAv
 }
@@ -60,16 +45,9 @@ addRateToBook = function(bookRate, NUsers, userStars){
 editBookRate = function(bookRate, NUsers, userOldRate, userNewRate){
     sub = deleteRateFromBook(bookRate, NUsers, userOldRate)
     newAvg = addRateToBook(sub, NUsers, userNewRate)
-
-    // console.log(bookRate, NUsers, userOldRate)
-
-    // subAv = (bookRate*NUsers / (5-userOldRate<=1?1:userOldRate-1)) / (NUsers<=1?1:NUsers-1)
-    // console.log(subAv)
-    // updatedBookRate = subAv + ((userOldRate - subAv) / (NUsers===0?1:NUsers))
-
-    // console.log(subAv, updatedBookRate)
     return newAvg
 }
 
 module.exports = {editBookRate,deleteRateFromBook,addRateToBook}
+
 
