@@ -184,3 +184,68 @@ module.exports = {
     //         }
     //     })
     // console.log(user[0].bookInfo)
+
+
+
+
+                // const user = UserModel.aggregate(
+            //     [
+            //         { 
+            //             $match: { _id: mongoose.Types.ObjectId(req.params.userId) } 
+            //         }, 
+            //         {
+            //             $project: {
+            //                 bookshelf: [
+            //                     {
+            //                         $filter: {
+            //                             input: '$bookshelf',
+            //                             as: 'book',
+            //                             cond: { $in: ["$$book.status", Status] },
+            //                         },
+            //                     },
+            //                 ], _id: 0
+            //         },
+            //         $lookup: {
+            //             from: 'book', 
+            //             localField: 'bookshelf', 
+            //             foreignField: mongoose.Types.ObjectId(), 
+            //             as: 'books'
+            //         }
+
+            //     },
+
+            // ], function (err, result) {
+            //         if (err) {
+            //             res.send(err);
+            //         } else {
+            //             res.send(result)
+            //         }
+            //     })
+            // console.log(user)
+
+            // const user = UserModel.aggregate(
+            //     [{ $match: { _id: mongoose.Types.ObjectId(req.userId) } }, 
+            //         {
+            //         $project: {
+            //             bookshelf: [{
+            //                 $filter: {
+            //                     input: '$bookshelf',
+            //                     as: 'book',
+            //                     cond: { $in: ["$$book.status", Status] },
+            //                 }
+            //             },
+                    
+            //         ], _id: 0
+            //         }
+            //     },
+            //     // { $lookup: {from: 'book', localField: 'bookId', foreignField: '_id', as: 'books'} }
+            // ], function (err, result) {
+            //         if (err) {
+            //             res.send(err);
+            //         } else {
+            //             console.log(result)
+            //             res.json(result)
+            //             // result[0].bookshelf[0].populate({path: "bookshelf.bookId", select:"-reviews"})
+            //         }
+            //     })
+            // console.log(user)

@@ -39,7 +39,7 @@ authorRouter.get("/top", async (req, res) => {
 /* Get Author by ID no need for Authentication */
 authorRouter.get("/:author_id", (req, res) => {
     const id = req.params.author_id;
-    AuthorModel.findById(id).populate({ path: 'books', select: '_id name photo' })
+    AuthorModel.findById(id).populate({ path: 'books', select: '_id name photo avgRating' })
         .then((author) => {
             if (author) return res.json(author);
             return res.status(404).end()

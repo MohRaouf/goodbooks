@@ -31,7 +31,7 @@ bookRouter.get("/:book_id", (req, res) => {
     const id = req.params.book_id;
     BookModel.findById(id).populate({ path: 'authorId', select: '_id fname lname' })
         .populate({ path: 'categoryId', select: '_id   name' })
-        .populate({ path: 'reviews', select: 'body', populate: { path: "userId", seclect: '_id fname lname' } })
+        .populate({ path: 'reviews', select: 'body', populate: { path: "userId", seclect: '_id fname lname photo' } })
         .then((book) => {
             if (book) return res.json(book);
             return res.status(404).end()

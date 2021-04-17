@@ -117,7 +117,7 @@ userRouter.delete("/remove_book/:bookId/:userRate/:avgRate", jwtHelpers.verifyAc
 userRouter.get("/get_book/:bookId", jwtHelpers.verifyAccessToken,  async (req, res) => {
     const userId = req.userId
     const bookId = req.params.bookId
-    const book = await findBookAtUser(res, userId, bookId)
+    const book = await userHelper.findBookAtUser(res, userId, bookId)
     console.log('########################################################################################################')
     if(book == -1){ // error happened
         return ;// already sent response
@@ -321,27 +321,8 @@ userRouter.get("/:status", jwtHelpers.verifyAccessToken, async (req, res) => {
     var Status = req.params.status !== "a" ? [req.params.status] : ["r", "c", "w"]
     var Page = req.query.pg ? req.query.pg : 0
     try{
-            // const user = UserModel.aggregate(
-            //     [{ $match: { _id: mongoose.Types.ObjectId(req.userId) } }, {
-            //         $project: {
-            //             bookshelf: [{
-            //                 $filter: {
-            //                     input: '$bookshelf',
-            //                     as: 'book',
-            //                     cond: { $in: ["$$book.status", Status] },
-            //                 }
-            //             }], _id: 0
-            //         }
-            //     }], function (err, result) {
-            //         if (err) {
-            //             res.send(err);
-            //         } else {
-            //             result[0].bookshelf[0].populate({path: "bookshelf.bookId", select:"-reviews"})
-            //         }
-            //     })
-            // console.log(user)
         UserModel.find({_id:  mongoose.Types.ObjectId(userId)})
-        .select("bookshelf").where(`bookshelf.status === w`)
+        .select("bookshelf")
         .populate({path: "bookshelf.bookId", select:"-reviews", 
         populate:[
             {path: "authorId", select:"_id fname lname"}, 
@@ -353,12 +334,14 @@ userRouter.get("/:status", jwtHelpers.verifyAccessToken, async (req, res) => {
                 return handleError(err);
 
             }
-            // console.log('The doc is: ', doc);
-            // console.log('The doc length is: ', doc.length);
-            // console.log('The doc is: ', doc[0].bookshelf[0]);
-            // console.log('The doc is: ', doc[0].bookshelf[1]);
-            res.json({status:200, result: doc[0].bookshelf})
-            return;
+            if(doc.length > 0){
+                filtered = req.params.status != "a"? doc[0].bookshelf.filter(item=> item.status == Status) :  doc[0].bookshelf
+                console.log('The doc is: ', doc);
+                console.log('The doc length is: ', doc.length);
+                console.log('The doc is: ', doc[0].bookshelf);
+                res.json({status:200, result: filtered})
+                return;
+        }
             // prints "The author is Ian Fleming"
           });
     }catch(err){
@@ -511,10 +494,55 @@ userRouter.patch("/edit_book_status/:bookId", jwtHelpers.verifyAccessToken, asyn
     } 
 })
 
-userRouter.get("/get_user",  jwtHelpers.verifyAccessToken, async (req, res) => {
-    console.log("################################################################\n")
+/** req body: {username:, fname:, lname:, dob:, gender:, password:, email:, }*/
+userRouter.patch("/update_userinfo", async (req, res) => {
+    const userId = req.userId
+    const info = req.body.info
+    pass = info.password
+    pass =await bcrypt.hash(pass, 10, (err, hashedText) => {
+        if(err) console.error(err)
+        pass = hashedText;
+    })
     try{
-        console.log("################################################################\n")
+        await UserModel.updateOne({_id: mongoose.Types.ObjectId(userId)},
+        {
+            $set:{
+                fname: info.fname,
+                lname: info.lname,
+                email: info.email,
+                dob: info.dob,
+                gender: info.gender,
+                email: info.email,
+                password: pass,
+            }
+        }
+        ).then((doc)=>{
+            if(doc.nModified == 1){
+                console.log("FOUND AND UPDATED")
+                res.json({status:200})
+                return
+            }
+            else{
+                res.json({status:503})
+                return
+            }
+        }).catch((err)=>{
+            if(err){
+                console.log("FOUND AND UPDATED")
+                res.json({status:503})
+                return
+            }
+        })
+    }
+    catch(err){
+        console.log(err)
+        res.json({status:503})
+        return
+    }
+})
+
+userRouter.post("/get_user/:userId",  jwtHelpers.verifyAccessToken, async (req, res) => {
+    try{
         const userId = req.userId
         await UserModel.find({_id: userId})
         .then((doc)=>{

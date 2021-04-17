@@ -40,7 +40,7 @@ categoryRouter.get('/top', (req, res) => {
 categoryRouter.get('/:categoryid', (req, res, next) => {
     const Id = req.params.categoryid;
     CategoryModel.find({ _id: Id })
-        .populate({ path: 'books', select: '_id name photo', populate: { path: 'authorId', select: '_id fname lname' } })
+        .populate({ path: 'books', select: '_id name photo avgRating', populate: { path: 'authorId', select: '_id fname lname' } })
         .then((category) => {
             if (category) { return res.json(category) }
             return res.status(404).end()
