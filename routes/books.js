@@ -85,15 +85,17 @@ bookRouter.delete("/:book_id", jwtHelpers.verifyAccessToken, jwtHelpers.isAdmin,
         }).catch((err) => { return res.status(500).end() })
 
 })
-bookRouter.get("/search/:q", async (req, res) => {
+bookRouter.get("/search/:q", (req, res) => {
     const searchWord = req.params.q;
     console.log(searchWord)
-    const filterResult = await BookModel.find({ name: { $regex: searchWord, $options: '$i' } })
+    BookModel.find({ name: { $regex: searchWord, $options: '$i' } }).select("_id name description authorId categoryId photo avgRating")
+    .populate({ path: 'authorId', select: '_id fname lname' })
+    .populate({ path: 'categoryId', select: '_id   name' })
         .catch((err) => {
             console.error(err)
             return res.status(500).send("Internal server error")
+        }).then((filterResult) => {
+            return res.json(filterResult);
         })
-
-    return res.json(filterResult);
 })
 module.exports = bookRouter
