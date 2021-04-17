@@ -495,18 +495,25 @@ userRouter.patch("/edit_book_status/:bookId", jwtHelpers.verifyAccessToken, asyn
 })
 
 /** req body: {username:, fname:, lname:, dob:, gender:, password:, email:, }*/
-userRouter.patch("/update_userinfo/:userId", async (req, res) => {
+userRouter.patch("/update_userinfo", async (req, res) => {
+    const userId = req.userId
     const info = req.body.info
+    pass = info.password
+    pass =await bcrypt.hash(pass, 10, (err, hashedText) => {
+        if(err) console.error(err)
+        pass = hashedText;
+    })
     try{
         await UserModel.updateOne({_id: mongoose.Types.ObjectId(userId)},
         {
             $set:{
-                username: info.username,
                 fname: info.fname,
                 lname: info.lname,
+                email: info.email,
                 dob: info.dob,
                 gender: info.gender,
-                email: info.email
+                email: info.email,
+                password: pass,
             }
         }
         ).then((doc)=>{
@@ -535,9 +542,7 @@ userRouter.patch("/update_userinfo/:userId", async (req, res) => {
 })
 
 userRouter.post("/get_user/:userId",  jwtHelpers.verifyAccessToken, async (req, res) => {
-    console.log("################################################################\n")
     try{
-        console.log("################################################################\n")
         const userId = req.userId
         await UserModel.find({_id: userId})
         .then((doc)=>{
