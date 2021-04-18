@@ -23,7 +23,7 @@ adminRouter.post("/signup", (req, res) => {
         if (err.code == 11000) {
             return res.status(409).end() // username duplication - conflict
         }
-        return res.sendStatus(500)
+        return res.status(500).end()
     })
 });
 
@@ -81,7 +81,7 @@ adminRouter.post("/refresh", async (req, res) => {
     if (refreshToken == null) return res.statys(401).end();
 
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
-        if (err) return res.sendStatus(401)
+        if (err) return res.status(401).end()
         const userId = userInfo.userId;
         console.log(`Extracted adminId from RefreshToken ==> ${userId}`)
 
@@ -109,7 +109,7 @@ adminRouter.post("/refresh", async (req, res) => {
 adminRouter.post('/logout', (req, res) => {
 
     const refreshToken = req.body.refreshToken;
-    if (refreshToken == null) return res.sendStatus(401);
+    if (refreshToken == null) return res.status(401).end();
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
 
         if (err) return res.status(401).end()
