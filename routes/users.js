@@ -93,7 +93,7 @@ userRouter.delete("/remove_book/:bookId/:userRate/:avgRate", jwtHelpers.verifyAc
     userDoc= await userHelper.removeBookFromShelf(res, userId, bookId)
      if(userDoc==-2){
         console.log("couldn't update userModel and delete the book")
-        return res.sendStatus(503).end()
+        return res.status(503).end()
      }
     if(userDoc != -1 && userDoc !=-2){
         console.log("======================= 1 ============================")
@@ -108,7 +108,7 @@ userRouter.delete("/remove_book/:bookId/:userRate/:avgRate", jwtHelpers.verifyAc
                 console.log(getBookInfoToDeleteDoc)
                 updateBookInfDoc = await userHelper.updateBookInfo(res, deleteReviewDoc._id, bookAvgRate, getBookInfoToDeleteDoc.ratingCount, userRate)
                 if(updateBookInfDoc != -1)
-                    res.sendStatus(200)
+                    res.status(200).end()
             }
         }
     }
@@ -178,7 +178,7 @@ userRouter.patch("/assert_book/:bookId", jwtHelpers.verifyAccessToken, async (re
             .catch((err)=> {
                 if(err){
                     console.log(err)
-                    res.sendStatus(200).end()
+                    res.status(200).end()
                     return
                 }
             })
@@ -195,12 +195,12 @@ userRouter.patch("/assert_book/:bookId", jwtHelpers.verifyAccessToken, async (re
             }).then((doc)=>{
                 console.log(doc)
                 if(doc.nModified==1)//if it's modified then send ok
-                    return res.sendStatus(200).end()
+                    return res.status(200).end()
                 else
-                    return res.sendStatus(503).end()
+                    return res.status(503).end()
             }).catch((err)=>{
                 console.log(err)
-                if(err) return res.sendStatus(503).end()
+                if(err) return res.status(503).end()
             })
         }
     }
@@ -235,7 +235,7 @@ userRouter.post("/add_review/:bookId", jwtHelpers.verifyAccessToken, async (req,
             addToBook = await userHelper.addReviewToBook(res, bookId, reviewDoc._id)
             if(addToBook != -1){
                 console.log(addToBook)
-                res.sendStatus(200)
+                res.status(200)
             }    
         }
     }
@@ -250,7 +250,7 @@ userRouter.post("/add_book", jwtHelpers.verifyAccessToken, async (req, res) => {
     if(user != -1){
         console.log("======================= 1 ============================")
         console.log(user)
-        res.sendStatus(200)
+        res.status(200)
     }
 })
 
@@ -293,22 +293,22 @@ userRouter.post("/logout", async (req, res) => {
     if (refreshToken == null) return res.status(401).end();
     jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, async (err, userInfo) => {
 
-        if (err) return res.status(403)
+        if (err) return res.status(403).end()
         const userId = userInfo.userId;
         console.log(`Extracted userId from RefreshToken ==> ${userId}`)
 
         const userInstance = await UserModel.updateOne({ _id: userId }, { refreshToken: null }, { new: true })
             .catch((err) => {
                 console.error(err);
-                return res.status(503)
+                return res.status(503).end()
             })
         if (!userInstance) {
             console.error('User not found')
-            return res.status(401)
+            return res.status(401).end()
         }
         console.log(`${userInstance}`)
         console.log(`User Logged out - Refresh Token Reset`)
-        return res.status(200)
+        return res.status(200).end()
     })
 })
 
@@ -401,28 +401,28 @@ userRouter.post("/add_rate/:bookId", jwtHelpers.verifyAccessToken, async (req, r
                     console.log(data);
                     if(data!= null && data.nModified==1)//if it's modified then send ok to frontend
                         {console.log(data)
-                            return res.sendStatus(200)
+                            return res.status(200).end()
                         }
                     else
                     {console.log(data);
-                        return res.sendStatus(503)}   
+                        return res.status(503).end()}   
                 }).catch((err)=>{
                     console.log(err);
 
-                    if(err) return res.sendStatus(503)
+                    if(err) return res.status(503).end()
                 })
             }
             else if(userDoc!= null && userDoc.n==0){
                 
             }
             else
-                return res.sendStatus(503)
+                return res.status(503).end()
         }).catch((err)=>{
             console.log(err);
-            if(err) return res.sendStatus(503)
+            if(err) return res.status(503).end()
         })
     }catch(e){
-        return res.sendStatus(503)
+        return res.status(503).end()
     }
 })
 
@@ -436,7 +436,7 @@ userRouter.patch("/user_book",  async (req, res) => {
         .then()
         .catch()
     }catch(e){
-            return res.sendStatus(503)
+            return res.status(503).end()
         }
 })
 
@@ -460,20 +460,20 @@ userRouter.patch("/edit_rate/:bookId", jwtHelpers.verifyAccessToken, async (req,
                     }
                 }).then((data)=>{
                     if(data!= null && data.nModified==1)//if it's modified then send ok to frontend
-                        return res.sendStatus(200)   
+                        return res.status(200).end()   
                     else
-                        return res.sendStatus(503)   
+                        return res.status(503).end()  
                 }).catch((err)=>{
-                    if(err) return res.sendStatus(503)
+                    if(err) return res.status(503).end()
                 })
             }
             else
-                return res.sendStatus(503)
+                return res.status(503).end()
         }).catch((err)=>{
-            if(err) return res.sendStatus(503)
+            if(err) return res.status(503).end()
         })
     }catch(e){
-        return res.sendStatus(503)
+        return res.status(503).end()
     }
 })
 
@@ -499,15 +499,15 @@ userRouter.patch("/edit_book_status/:bookId", jwtHelpers.verifyAccessToken, asyn
             console.log(userDoc)
             if(userDoc != null && userDoc.nModified == 1){//if it's modified then send ok to frontend
                 console.log(userDoc)
-                return res.sendStatus(200)
+                return res.status(200).end()
             }
             else
-                return res.sendStatus(503)
+                return res.status(503).end()
         }).catch((err)=>{
-            if(err) return res.sendStatus(503)
+            if(err) return res.status(503).end()
         })
     }catch(e){ 
-        return res.sendStatus(503)
+        return res.status(503).end()
     } 
 })
 
